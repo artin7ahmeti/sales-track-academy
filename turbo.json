@@ -1,6 +1,6 @@
 {
   "$schema": "https://turborepo.org/schema.json",
-  "globalDotEnv": [".env"],
+  "globalDependencies": [".env"],
   "tasks": {
     "dev": {
       "cache": false,
