@@ -1,5 +1,5 @@
 {
-  "name": "training-platform",
+  "name": "salestrack-academy",
   "private": true,
   "packageManager": "pnpm@10.32.1",
   "scripts": {
@@ -7,7 +7,12 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "db:generate": "turbo db:generate --filter=@salestrack/database",
+    "db:push": "turbo db:push --filter=@salestrack/database",
+    "db:migrate": "turbo db:migrate --filter=@salestrack/database",
+    "db:seed": "turbo db:seed --filter=@salestrack/database",
+    "db:studio": "pnpm --filter @salestrack/database exec prisma studio"
   },
   "devDependencies": {
     "prettier": "latest",

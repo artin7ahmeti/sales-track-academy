@@ -1,5 +1,6 @@
 {
   "$schema": "https://turborepo.org/schema.json",
+  "globalDotEnv": [".env"],
   "tasks": {
     "dev": {
       "cache": false,
@@ -14,6 +15,21 @@
     },
     "typecheck": {
       "dependsOn": ["^typecheck"]
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:push": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false
+    },
+    "db:seed": {
+      "cache": false
+    },
+    "test": {
+      "dependsOn": ["^build"]
     }
   }
 }
