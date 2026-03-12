@@ -9,7 +9,6 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { Role, type TokenPayload } from '@salestrack/contracts';
-import { v4 as uuidv4 } from 'crypto';
 
 @Injectable()
 export class AuthService {
