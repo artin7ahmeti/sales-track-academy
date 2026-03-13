@@ -14,8 +14,6 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "declaration": true,
-    "declarationMap": true,
     "sourceMap": true
   },
   "exclude": ["node_modules", "dist", ".next", "coverage"]

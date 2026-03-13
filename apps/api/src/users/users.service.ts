@@ -9,7 +9,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { UserListQueryDto } from './dto/user-list-query.dto';
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '@salestrack/database';
 
 @Injectable()
 export class UsersService {

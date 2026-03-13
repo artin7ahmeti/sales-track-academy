@@ -4,7 +4,7 @@ import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { AssignCourseDto } from './dto/assign-course.dto';
 import { CourseListQueryDto } from './dto/course-list-query.dto';
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '@salestrack/database';
 
 @Injectable()
 export class CoursesService {

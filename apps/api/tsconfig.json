@@ -9,7 +9,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "noEmit": false,
-    "declaration": true,
+    "declaration": false,
     "sourceMap": true,
     "types": ["node"]
   },
