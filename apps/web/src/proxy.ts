@@ -12,7 +12,7 @@ function decodeJwtPayload(token: string): { sub: string; role: string } | null {
   }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes, always accessible
