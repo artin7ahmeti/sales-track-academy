@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { getCurrentUser, login as loginApi, logout as logoutApi } from '@/lib/api/auth';
 import type { Role } from '@salestrack/contracts';
 
@@ -23,6 +24,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -41,9 +43,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await logoutApi();
-    setUser(null);
-  }, []);
+    try {
+      await logoutApi();
+    } catch {
+      // Best-effort logout: continue local cleanup + redirect even if API call fails.
+    } finally {
+      setUser(null);
+      router.replace('/');
+      router.refresh();
+    }
+  }, [router]);
 
   return (
     <AuthContext.Provider
