@@ -21,6 +21,14 @@ export async function acceptInvite(
   return apiClient.post('/auth/accept-invite', { token, name, password });
 }
 
+export async function signup(
+  name: string,
+  email: string,
+  password: string,
+): Promise<LoginResponse> {
+  return apiClient.post<LoginResponse>('/auth/signup', { name, email, password });
+}
+
 export async function getCurrentUser() {
   return apiClient.get<{
     id: string;

@@ -91,6 +91,29 @@ export class AuthService {
     });
   }
 
+  async signup(email: string, name: string, password: string) {
+    const existing = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existing && !existing.deletedAt) {
+      throw new ConflictException('An account with this email already exists');
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = existing
+      ? await this.prisma.user.update({
+          where: { id: existing.id },
+          data: { name, passwordHash, isActive: true, role: 'AGENT' as Role, deletedAt: null },
+        })
+      : await this.prisma.user.create({
+          data: { email, name, passwordHash, role: 'AGENT' as Role, isActive: true },
+        });
+
+    return this.login(user);
+  }
+
   async acceptInvite(token: string, name: string, password: string) {
     const invitation = await this.prisma.invitation.findUnique({
       where: { token },

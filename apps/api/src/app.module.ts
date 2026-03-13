@@ -11,6 +11,7 @@ import { QuizzesModule } from './quizzes/quizzes.module';
 import { CommentsModule } from './comments/comments.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { StorageModule } from './storage/storage.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { StorageModule } from './storage/storage.module';
     CommentsModule,
     AnalyticsModule,
     StorageModule,
+    HealthModule,
   ],
 })
 export class AppModule {}
