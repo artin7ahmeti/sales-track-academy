@@ -1,7 +1,141 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateLessonDto } from './dto/create-lesson.dto';
+import { UpdateLessonDto } from './dto/update-lesson.dto';
+import type { Prisma } from '@prisma/client';
 
 @Injectable()
 export class LessonsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findByCourse(courseId: string) {
+    return this.prisma.lesson.findMany({
+      where: { courseId },
+      orderBy: { sortOrder: 'asc' },
+    });
+  }
+
+  async findOne(id: string) {
+    const lesson = await this.prisma.lesson.findUnique({ where: { id } });
+    if (!lesson) throw new NotFoundException('Lesson not found');
+    return lesson;
+  }
+
+  async create(courseId: string, dto: CreateLessonDto) {
+    const maxOrder = await this.prisma.lesson.aggregate({
+      where: { courseId },
+      _max: { sortOrder: true },
+    });
+
+    return this.prisma.lesson.create({
+      data: {
+        courseId,
+        title: dto.title,
+        description: dto.description,
+        type: dto.type as any,
+        content: dto.content as Prisma.InputJsonValue,
+        durationSec: dto.durationSec,
+        sortOrder: (maxOrder._max.sortOrder ?? -1) + 1,
+      },
+    });
+  }
+
+  async update(id: string, dto: UpdateLessonDto) {
+    await this.ensureExists(id);
+    const data: Prisma.LessonUpdateInput = {};
+    if (dto.title !== undefined) data.title = dto.title;
+    if (dto.description !== undefined) data.description = dto.description;
+    if (dto.content !== undefined) data.content = dto.content as Prisma.InputJsonValue;
+    if (dto.durationSec !== undefined) data.durationSec = dto.durationSec;
+
+    return this.prisma.lesson.update({ where: { id }, data });
+  }
+
+  async remove(id: string) {
+    await this.ensureExists(id);
+    await this.prisma.lesson.delete({ where: { id } });
+  }
+
+  async reorder(courseId: string, lessonIds: string[]) {
+    await this.prisma.$transaction(
+      lessonIds.map((id, index) =>
+        this.prisma.lesson.update({
+          where: { id },
+          data: { sortOrder: index },
+        }),
+      ),
+    );
+  }
+
+  async updateProgress(
+    lessonId: string,
+    userId: string,
+    progressPct: number,
+    lastPosition?: number,
+  ) {
+    await this.ensureExists(lessonId);
+
+    const isCompleted = progressPct >= 100;
+    const completedAt = isCompleted ? new Date() : undefined;
+
+    const progress = await this.prisma.lessonProgress.upsert({
+      where: { lessonId_userId: { lessonId, userId } },
+      create: {
+        lessonId,
+        userId,
+        progressPct,
+        lastPosition,
+        isCompleted,
+        completedAt,
+      },
+      update: {
+        progressPct,
+        lastPosition,
+        isCompleted,
+        completedAt,
+      },
+    });
+
+    // Check if all lessons in the course are completed to update assignment status
+    if (isCompleted) {
+      const lesson = await this.prisma.lesson.findUnique({
+        where: { id: lessonId },
+        select: { courseId: true },
+      });
+      if (lesson) {
+        await this.checkCourseCompletion(lesson.courseId, userId);
+      }
+    }
+
+    return progress;
+  }
+
+  private async checkCourseCompletion(courseId: string, userId: string) {
+    const totalLessons = await this.prisma.lesson.count({ where: { courseId } });
+    const completedLessons = await this.prisma.lessonProgress.count({
+      where: {
+        lesson: { courseId },
+        userId,
+        isCompleted: true,
+      },
+    });
+
+    if (completedLessons >= totalLessons) {
+      await this.prisma.courseAssignment.updateMany({
+        where: { courseId, userId },
+        data: { status: 'COMPLETED', completedAt: new Date() },
+      });
+    } else {
+      await this.prisma.courseAssignment.updateMany({
+        where: { courseId, userId, status: 'ASSIGNED' },
+        data: { status: 'IN_PROGRESS' },
+      });
+    }
+  }
+
+  private async ensureExists(id: string) {
+    const lesson = await this.prisma.lesson.findUnique({ where: { id } });
+    if (!lesson) throw new NotFoundException('Lesson not found');
+    return lesson;
+  }
 }
