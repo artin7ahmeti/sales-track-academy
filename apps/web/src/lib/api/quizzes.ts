@@ -32,8 +32,27 @@ export interface QuizResult {
   userAnswers: Record<string, string>;
 }
 
+export interface CreateQuizData {
+  title: string;
+  description?: string;
+  passingScore: number;
+  questions: {
+    text: string;
+    sortOrder: number;
+    options: { text: string; sortOrder: number; isCorrect: boolean }[];
+  }[];
+}
+
 export function getQuizzes(courseId: string) {
   return apiClient.get<Quiz[]>(`/courses/${courseId}/quizzes`);
+}
+
+export function createQuiz(courseId: string, data: CreateQuizData) {
+  return apiClient.post<Quiz>(`/courses/${courseId}/quizzes`, data);
+}
+
+export function deleteQuiz(courseId: string, quizId: string) {
+  return apiClient.delete(`/courses/${courseId}/quizzes/${quizId}`);
 }
 
 export function getQuiz(courseId: string, quizId: string) {

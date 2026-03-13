@@ -43,5 +43,5 @@ export function addMembers(groupId: string, userIds: string[]) {
 }
 
 export function removeMembers(groupId: string, userIds: string[]) {
-  return apiClient.delete(`/groups/${groupId}/members`);
+  return apiClient.delete(`/groups/${groupId}/members`, { userIds });
 }
