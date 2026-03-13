@@ -58,9 +58,9 @@ export const config = {
     /*
      * Match all paths except:
      * - api routes
-     * - static files
-     * - _next internal routes
+     * - _next internal routes (including dev HMR endpoints)
+     * - favicon
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next|favicon.ico).*)',
   ],
 };

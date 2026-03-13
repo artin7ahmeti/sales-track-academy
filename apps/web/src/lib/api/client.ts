@@ -75,7 +75,11 @@ async function request<T>(
 
     // Refresh failed — redirect to login
     if (typeof window !== 'undefined') {
-      window.location.href = '/public/login';
+      const { pathname } = window.location;
+      const isPublicRoute = pathname === '/' || pathname.startsWith('/public');
+      if (!isPublicRoute) {
+        window.location.replace('/public/login');
+      }
     }
     throw new ApiClientError(401, 'Session expired');
   }

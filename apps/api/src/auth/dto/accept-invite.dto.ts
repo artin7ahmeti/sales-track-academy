@@ -2,13 +2,13 @@ import { IsString, MinLength } from 'class-validator';
 
 export class AcceptInviteDto {
   @IsString()
-  token: string;
+  token!: string;
 
   @IsString()
   @MinLength(1)
-  name: string;
+  name!: string;
 
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 }
