@@ -25,6 +25,10 @@ dist/
 .DS_Store
 *.pem
 
+# Turbo cache
+.turbo/
+**/.turbo/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
