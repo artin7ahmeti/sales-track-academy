@@ -33,6 +33,10 @@ export function deleteLesson(courseId: string, lessonId: string) {
   return apiClient.delete(`/courses/${courseId}/lessons/${lessonId}`);
 }
 
+export function reorderLessons(courseId: string, lessonIds: string[]) {
+  return apiClient.post(`/courses/${courseId}/lessons/reorder`, { lessonIds });
+}
+
 export function updateProgress(courseId: string, lessonId: string, data: { progressPct: number; lastPosition?: number }) {
   return apiClient.post(`/courses/${courseId}/lessons/${lessonId}/progress`, data);
 }
