@@ -35,12 +35,12 @@ export function AssignCourseDialog({
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    Promise.all([getUsers({ limit: 200, role: 'AGENT' }), getGroups({ limit: 100 })])
+    Promise.all([getUsers({ limit: 100, role: 'AGENT' }), getGroups({ limit: 100 })])
       .then(([usersRes, groupsRes]) => {
         setUsers(usersRes.data);
         setGroups(groupsRes.data);
       })
-      .catch(() => toast.error('Failed to load users/groups'))
+      .catch((err) => toast.error(err instanceof Error ? err.message : 'Failed to load users/groups'))
       .finally(() => setLoading(false));
   }, [open]);
 
@@ -113,11 +113,11 @@ export function AssignCourseDialog({
               />
             </div>
 
-            {users.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Agents ({selectedUsers.size} selected)
-                </Label>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Agents ({selectedUsers.size} selected)
+              </Label>
+              {users.length > 0 ? (
                 <div className="max-h-40 overflow-y-auto space-y-1 rounded-lg border p-2">
                   {users.map((u) => (
                     <label
@@ -135,14 +135,18 @@ export function AssignCourseDialog({
                     </label>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-xs text-muted-foreground rounded-lg border p-3 text-center">
+                  No agents found. Invite agents first.
+                </p>
+              )}
+            </div>
 
-            {groups.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Groups ({selectedGroups.size} selected)
-                </Label>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Groups ({selectedGroups.size} selected)
+              </Label>
+              {groups.length > 0 ? (
                 <div className="max-h-40 overflow-y-auto space-y-1 rounded-lg border p-2">
                   {groups.map((g) => (
                     <label
@@ -162,8 +166,12 @@ export function AssignCourseDialog({
                     </label>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-xs text-muted-foreground rounded-lg border p-3 text-center">
+                  No groups found. Create groups first.
+                </p>
+              )}
+            </div>
           </div>
         )}
 

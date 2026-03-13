@@ -57,8 +57,8 @@ export default function GroupsPage() {
     try {
       const res = await getGroups();
       setGroups(res.data);
-    } catch {
-      toast.error('Failed to load groups');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load groups');
     } finally {
       setLoading(false);
     }
@@ -88,12 +88,12 @@ export default function GroupsPage() {
     try {
       const [detail, usersRes] = await Promise.all([
         getGroup(group.id),
-        getUsers({ limit: 200 }),
+        getUsers({ limit: 100 }),
       ]);
       setMembersGroup(detail);
       setAllUsers(usersRes.data);
-    } catch {
-      toast.error('Failed to load group members');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to load group members');
       setMembersOpen(false);
     } finally {
       setMembersLoading(false);
@@ -146,8 +146,8 @@ export default function GroupsPage() {
       setSelectedUserId('');
       fetchGroups();
       toast.success('Member added');
-    } catch {
-      toast.error('Failed to add member');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add member');
     }
   }
 
@@ -161,8 +161,8 @@ export default function GroupsPage() {
       });
       fetchGroups();
       toast.success('Member removed');
-    } catch {
-      toast.error('Failed to remove member');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove member');
     }
   }
 
