@@ -26,9 +26,22 @@ async function handleResponse<T>(response: Response): Promise<T> {
     );
   }
 
-  const body = await response.json();
-  // Unwrap the { data } envelope from the API transform interceptor
-  return body.data !== undefined ? body.data : body;
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const body = await response.json().catch(() => undefined);
+
+  if (body && typeof body === 'object' && 'data' in body) {
+    // Preserve paginated responses in { data, meta } shape.
+    if ('meta' in body) {
+      return body as T;
+    }
+    // Unwrap the standard { data } envelope from the API transform interceptor.
+    return (body as { data: T }).data;
+  }
+
+  return body as T;
 }
 
 async function request<T>(

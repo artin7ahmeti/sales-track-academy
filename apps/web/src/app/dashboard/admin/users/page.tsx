@@ -310,7 +310,7 @@ export default function UsersPage() {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={inviteRole} onValueChange={setInviteRole}>
+              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v ?? 'AGENT')}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -360,7 +360,7 @@ export default function UsersPage() {
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={editRole} onValueChange={setEditRole}>
+              <Select value={editRole} onValueChange={(v) => setEditRole(v ?? 'AGENT')}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
