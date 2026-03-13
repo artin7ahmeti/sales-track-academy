@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import {
   BookOpen, Plus, Search, MoreHorizontal,
   Pencil, Trash2, Eye, EyeOff,
@@ -207,14 +208,14 @@ export default function CoursesPage() {
               {courses.map((course) => (
                 <TableRow key={course.id}>
                   <TableCell>
-                    <div>
-                      <span className="font-medium">{course.title}</span>
+                    <Link href={`/dashboard/admin/courses/${course.id}`} className="block group">
+                      <span className="font-medium group-hover:underline">{course.title}</span>
                       {course.description && (
                         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                           {course.description}
                         </p>
                       )}
-                    </div>
+                    </Link>
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge variant={course.isPublished ? 'default' : 'secondary'}>
