@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
@@ -13,7 +14,10 @@ import type { Prisma } from '@salestrack/database';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mail: MailService,
+  ) {}
 
   async findAll(query: UserListQueryDto) {
     const where: Prisma.UserWhereInput = { deletedAt: null };
@@ -125,23 +129,35 @@ export class UsersService {
   }
 
   async invite(dto: InviteUserDto, invitedById: string) {
+    const email = dto.email.trim().toLowerCase();
     const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+      where: { email },
     });
     if (existing?.isActive) {
       throw new ConflictException('User with this email already exists');
     }
 
+    await this.prisma.invitation.updateMany({
+      where: { email, status: 'PENDING' },
+      data: { status: 'EXPIRED' },
+    });
+
     const invitation = await this.prisma.invitation.create({
       data: {
-        email: dto.email,
+        email,
         role: dto.role,
         invitedById,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
     });
 
-    return { invitationId: invitation.id, token: invitation.token };
+    const delivery = await this.mail.sendInvitation(email, invitation.token, invitation.role);
+
+    return {
+      invitationId: invitation.id,
+      emailStatus: delivery.emailStatus,
+      inviteUrl: delivery.emailStatus === 'sent' ? undefined : delivery.inviteUrl,
+    };
   }
 
   async findByEmail(email: string) {

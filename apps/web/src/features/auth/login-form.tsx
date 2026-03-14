@@ -27,7 +27,7 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export function LoginForm() {
+export function LoginForm({ defaultEmail = '' }: { defaultEmail?: string }) {
   const router = useRouter();
   const { login } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export function LoginForm() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
+      email: defaultEmail,
       password: '',
     },
   });
@@ -135,7 +135,7 @@ export function LoginForm() {
         <p className="text-sm text-white/40">
           Don&apos;t have an account?{' '}
           <Link
-            href="/public/signup"
+            href={defaultEmail ? `/public/signup?email=${encodeURIComponent(defaultEmail)}` : '/public/signup'}
             className="text-white/80 font-medium hover:text-white transition-colors"
           >
             Create one

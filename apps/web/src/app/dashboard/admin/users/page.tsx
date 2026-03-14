@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   Users, UserPlus, Search, MoreHorizontal,
-  Pencil, Trash2, Mail, Shield, ShieldCheck,
+  Pencil, Trash2, Mail, Shield, ShieldCheck, Copy,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,7 @@ export default function UsersPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('AGENT');
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
 
   // Edit dialog
@@ -75,6 +76,30 @@ export default function UsersPage() {
     fetchUsers();
   }, [fetchUsers]);
 
+  function resetInviteForm() {
+    setInviteEmail('');
+    setInviteRole('AGENT');
+    setInviteLink(null);
+  }
+
+  function handleInviteDialogChange(open: boolean) {
+    setInviteOpen(open);
+    if (!open) {
+      resetInviteForm();
+    }
+  }
+
+  async function copyInviteLink(url: string, showToast = true) {
+    try {
+      await navigator.clipboard.writeText(url);
+      if (showToast) {
+        toast.success('Invite link copied to clipboard');
+      }
+    } catch {
+      toast.error('Failed to copy invite link');
+    }
+  }
+
   function openEdit(user: User) {
     setEditingUser(user);
     setEditName(user.name);
@@ -84,17 +109,30 @@ export default function UsersPage() {
   }
 
   async function handleInvite() {
-    if (!inviteEmail.trim()) return;
+    const email = inviteEmail.trim().toLowerCase();
+    if (!email) return;
     setInviting(true);
     try {
-      await inviteUser({ email: inviteEmail, role: inviteRole });
-      toast.success('Invitation sent');
-      setInviteOpen(false);
-      setInviteEmail('');
-      setInviteRole('AGENT');
-      fetchUsers();
-    } catch {
-      toast.error('Failed to send invitation');
+      const result = await inviteUser({ email, role: inviteRole });
+      setInviteLink(result.inviteUrl ?? null);
+
+      if (result.emailStatus === 'sent') {
+        toast.success('Invitation email sent');
+        handleInviteDialogChange(false);
+        return;
+      }
+
+      if (result.inviteUrl) {
+        await copyInviteLink(result.inviteUrl, false);
+      }
+
+      if (result.emailStatus === 'skipped') {
+        toast.success('Invitation created, but SMTP is not configured. Share the link manually.');
+      } else {
+        toast.error('Invitation created, but email delivery failed. Share the link manually.');
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send invitation');
     } finally {
       setInviting(false);
     }
@@ -296,7 +334,7 @@ export default function UsersPage() {
       </FadeIn>
 
       {/* Invite Dialog */}
-      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+      <Dialog open={inviteOpen} onOpenChange={handleInviteDialogChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Invite User</DialogTitle>
@@ -327,9 +365,31 @@ export default function UsersPage() {
                 </SelectContent>
               </Select>
             </div>
+            {inviteLink && (
+              <div className="space-y-2 rounded-lg border border-dashed p-3">
+                <div>
+                  <p className="text-sm font-medium">Manual invite link</p>
+                  <p className="text-xs text-muted-foreground">
+                    Email delivery was not completed. Share this link directly with the invited user.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Input value={inviteLink} readOnly />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => copyInviteLink(inviteLink)}
+                    aria-label="Copy invite link"
+                  >
+                    <Copy className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setInviteOpen(false)}>
+            <Button variant="outline" onClick={() => handleInviteDialogChange(false)}>
               Cancel
             </Button>
             <Button

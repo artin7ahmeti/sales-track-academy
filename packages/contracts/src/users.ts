@@ -41,6 +41,14 @@ export interface InviteUserRequest {
   groupIds?: string[];
 }
 
+export type InvitationEmailStatus = 'sent' | 'skipped' | 'failed';
+
+export interface InviteUserResponse {
+  invitationId: string;
+  emailStatus: InvitationEmailStatus;
+  inviteUrl?: string;
+}
+
 export interface UserListParams {
   page?: number;
   limit?: number;

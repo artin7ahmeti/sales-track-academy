@@ -14,7 +14,7 @@ export class InviteUserDto {
   @ApiPropertyOptional({
     type: [String],
     example: ['grp_123', 'grp_456'],
-    description: 'Optional group ids to auto-assign after accepting invitation',
+    description: 'Optional group ids reserved for future invite assignment support.',
   })
   @IsOptional()
   @IsArray()

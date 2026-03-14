@@ -149,7 +149,13 @@ export class AuthService {
       const newUser = existingUser
         ? await tx.user.update({
             where: { id: existingUser.id },
-            data: { name, passwordHash, isActive: true, role: invitation.role as Role },
+            data: {
+              name,
+              passwordHash,
+              isActive: true,
+              role: invitation.role as Role,
+              deletedAt: null,
+            },
           })
         : await tx.user.create({
             data: {
@@ -169,7 +175,7 @@ export class AuthService {
       return newUser;
     });
 
-    return { message: 'Account activated successfully', userId: user.id };
+    return { message: 'Account activated successfully', userId: user.id, email: user.email };
   }
 
   async getMe(userId: string) {
