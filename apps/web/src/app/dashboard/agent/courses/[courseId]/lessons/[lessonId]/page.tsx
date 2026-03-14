@@ -7,87 +7,13 @@ import {
   ArrowLeft, ArrowRight, CheckCircle, Video,
   Headphones, FileText, Type,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { getLesson, getLessons, updateProgress, type Lesson } from '@/lib/api/lessons';
+import { LessonContentViewer } from '@/features/shared/lesson-content-viewer';
 import { CommentSection } from '@/features/shared/comment-section';
-
-function extractYouTubeId(url: string): string | null {
-  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
-  return match ? match[1]! : null;
-}
-
-function extractVimeoId(url: string): string | null {
-  const match = url.match(/vimeo\.com\/(\d+)/);
-  return match ? match[1]! : null;
-}
-
-function VideoPlayer({ url }: { url: string }) {
-  const ytId = extractYouTubeId(url);
-  if (ytId) {
-    return (
-      <div className="aspect-video rounded-lg overflow-hidden bg-black">
-        <iframe
-          src={`https://www.youtube-nocookie.com/embed/${ytId}`}
-          className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          title="Video lesson"
-        />
-      </div>
-    );
-  }
-
-  const vimeoId = extractVimeoId(url);
-  if (vimeoId) {
-    return (
-      <div className="aspect-video rounded-lg overflow-hidden bg-black">
-        <iframe
-          src={`https://player.vimeo.com/video/${vimeoId}`}
-          className="w-full h-full"
-          allow="autoplay; fullscreen; picture-in-picture"
-          allowFullScreen
-          title="Video lesson"
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="aspect-video rounded-lg overflow-hidden bg-black">
-      <video src={url} controls className="w-full h-full" />
-    </div>
-  );
-}
-
-function AudioPlayer({ url }: { url: string }) {
-  return (
-    <div className="rounded-lg border p-6 flex items-center justify-center">
-      <audio src={url} controls className="w-full max-w-lg" />
-    </div>
-  );
-}
-
-function PdfViewer({ url }: { url: string }) {
-  return (
-    <div className="rounded-lg border overflow-hidden" style={{ height: '70vh' }}>
-      <iframe src={url} className="w-full h-full" title="PDF lesson" />
-    </div>
-  );
-}
-
-function TextViewer({ text }: { text: string }) {
-  return (
-    <Card>
-      <CardContent className="pt-6 prose prose-sm max-w-none dark:prose-invert">
-        <div dangerouslySetInnerHTML={{ __html: text }} />
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function LessonViewerPage() {
   const params = useParams<{ courseId: string; lessonId: string }>();
@@ -148,7 +74,6 @@ export default function LessonViewerPage() {
   const currentIdx = allLessons.findIndex((l) => l.id === lessonId);
   const prevLesson = currentIdx > 0 ? allLessons[currentIdx - 1] : null;
   const nextLesson = currentIdx < allLessons.length - 1 ? allLessons[currentIdx + 1] : null;
-  const content = lesson.content as Record<string, string>;
 
   const typeLabel: Record<string, string> = { VIDEO: 'Video', AUDIO: 'Audio', PDF: 'PDF', TEXT: 'Text' };
   const TypeIcon = { VIDEO: Video, AUDIO: Headphones, PDF: FileText, TEXT: Type }[lesson.type] || Type;
@@ -179,10 +104,10 @@ export default function LessonViewerPage() {
       </div>
 
       {/* Content */}
-      {lesson.type === 'VIDEO' && content.url && <VideoPlayer url={content.url} />}
-      {lesson.type === 'AUDIO' && content.url && <AudioPlayer url={content.url} />}
-      {lesson.type === 'PDF' && content.url && <PdfViewer url={content.url} />}
-      {lesson.type === 'TEXT' && content.text && <TextViewer text={content.text} />}
+      <LessonContentViewer
+        type={lesson.type}
+        content={lesson.content as Record<string, unknown>}
+      />
 
       {/* Mark Complete */}
       <div className="flex justify-center">

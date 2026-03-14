@@ -1,8 +1,9 @@
 import { apiClient } from './client';
 
 export interface UploadUrlResponse {
-  url: string;
+  uploadUrl: string;
   key: string;
+  expiresIn: number;
 }
 
 export function getUploadUrl(data: { fileName: string; contentType: string; entityType: string; entityId: string }) {
@@ -13,6 +14,8 @@ export function confirmUpload(key: string) {
   return apiClient.post('/storage/confirm', { key });
 }
 
-export function getDownloadUrl(key: string) {
-  return apiClient.get<{ url: string }>(`/storage/download-url?key=${encodeURIComponent(key)}`);
+export function getDownloadUrl(key: string, inline?: boolean) {
+  const params = new URLSearchParams({ key });
+  if (inline) params.set('inline', 'true');
+  return apiClient.get<{ url: string }>(`/storage/download-url?${params.toString()}`);
 }
