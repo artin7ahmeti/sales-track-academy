@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { LightRaysBackground } from '@/components/backgrounds/light-rays-background';
 import {
   GraduationCap, BookOpen, Brain, BarChart3,
   Users, ArrowRight, Menu, X, CheckCircle,
@@ -109,7 +110,8 @@ export default function Home() {
       <main>
         {/* Hero Section */}
         <section className="relative overflow-hidden pt-14">
-          <div className="mx-auto max-w-6xl px-6 py-24 lg:py-32">
+          <LightRaysBackground />
+          <div className="relative z-10 mx-auto max-w-6xl px-6 py-24 lg:py-32">
             <div className="lg:flex lg:items-center lg:gap-16">
               <div className="mx-auto max-w-xl text-center lg:mx-0 lg:w-1/2 lg:text-left">
                 <div className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border px-3 py-1 lg:mx-0">
