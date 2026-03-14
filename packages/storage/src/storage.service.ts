@@ -13,8 +13,11 @@ export class StorageService {
     return generateUploadUrl(this.bucket, key, contentType, expiresIn);
   }
 
-  async getDownloadUrl(key: string, expiresIn?: number): Promise<string> {
-    return generateDownloadUrl(this.bucket, key, expiresIn);
+  async getDownloadUrl(key: string, expiresIn?: number, inline?: boolean): Promise<string> {
+    return generateDownloadUrl(
+      this.bucket, key, expiresIn,
+      inline ? 'inline' : undefined,
+    );
   }
 
   async uploadFile(key: string, body: Buffer, contentType: string): Promise<void> {
