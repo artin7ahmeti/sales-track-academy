@@ -9,6 +9,16 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiCookieAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -19,12 +29,20 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignupDto } from './dto/signup.dto';
 
 @Controller('auth')
+@ApiTags('Auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Login',
+    description: 'Authenticates user and sets `access_token` / `refresh_token` cookies.',
+  })
+  @ApiBody({ type: LoginDto })
+  @ApiOkResponse({ description: 'Authenticated user with access and refresh tokens.' })
+  @ApiUnauthorizedResponse({ description: 'Invalid credentials.' })
   async login(
     @Body() _loginDto: LoginDto,
     @CurrentUser() user: { id: string; email: string; role: string },
@@ -54,6 +72,12 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Refresh tokens',
+    description: 'Exchanges a refresh token for a new access token and refresh token pair.',
+  })
+  @ApiBody({ type: RefreshTokenDto })
+  @ApiOkResponse({ description: 'New token pair.' })
   async refresh(
     @Body() refreshTokenDto: RefreshTokenDto,
     @Res({ passthrough: true }) response: Response,
@@ -82,6 +106,10 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Logout', description: 'Invalidates refresh token and clears auth cookies.' })
+  @ApiBearerAuth('bearer')
+  @ApiCookieAuth('access_token')
+  @ApiOkResponse({ description: 'Logged out successfully.' })
   async logout(
     @CurrentUser() user: { id: string },
     @Res({ passthrough: true }) response: Response,
@@ -96,6 +124,9 @@ export class AuthController {
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Signup', description: 'Creates a new agent account and returns auth tokens.' })
+  @ApiBody({ type: SignupDto })
+  @ApiCreatedResponse({ description: 'User created with token pair.' })
   async signup(
     @Body() signupDto: SignupDto,
     @Res({ passthrough: true }) response: Response,
@@ -127,6 +158,9 @@ export class AuthController {
 
   @Post('accept-invite')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Accept invitation', description: 'Creates account from invite token.' })
+  @ApiBody({ type: AcceptInviteDto })
+  @ApiOkResponse({ description: 'Invitation accepted and account created.' })
   async acceptInvite(@Body() acceptInviteDto: AcceptInviteDto) {
     return this.authService.acceptInvite(
       acceptInviteDto.token,
@@ -137,6 +171,10 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiBearerAuth('bearer')
+  @ApiCookieAuth('access_token')
+  @ApiOkResponse({ description: 'Current authenticated user.' })
   async me(@CurrentUser() user: { id: string }) {
     return this.authService.getMe(user.id);
   }
