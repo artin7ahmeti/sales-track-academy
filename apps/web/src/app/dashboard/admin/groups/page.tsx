@@ -25,6 +25,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { FadeIn } from '@/components/animations/fade-in';
 import {
   getGroups, getGroup, createGroup, updateGroup, deleteGroup,
   addMembers, removeMembers,
@@ -193,100 +194,105 @@ export default function GroupsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Groups</h1>
-          <p className="text-muted-foreground mt-1">
-            Organize agents into groups for course assignment.
-          </p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus className="size-4 mr-1" />
-          Create Group
-        </Button>
-      </div>
-
-      {groups.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="rounded-full bg-muted p-4 mb-4">
-              <FolderOpen className="size-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-medium">No groups yet</h3>
-            <p className="text-muted-foreground text-sm mt-1 mb-4">
-              Create a group to assign courses to multiple agents at once.
+      <FadeIn duration={500}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Groups</h1>
+            <p className="text-muted-foreground mt-1">
+              Organize agents into groups for course assignment.
             </p>
-            <Button onClick={openCreate}>
-              <Plus className="size-4 mr-1" />
-              Create Group
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-center">Members</TableHead>
-                <TableHead className="text-center">Created</TableHead>
-                <TableHead className="w-12" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {groups.map((group) => (
-                <TableRow key={group.id}>
-                  <TableCell className="font-medium">{group.name}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm max-w-xs truncate">
-                    {group.description || '-'}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openMembers(group)}
-                    >
-                      <Users className="size-4 mr-1" />
-                      {group.memberCount}
-                    </Button>
-                  </TableCell>
-                  <TableCell className="text-center text-sm text-muted-foreground">
-                    {new Date(group.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={<Button variant="ghost" size="icon-sm" />}
-                      >
-                        <MoreHorizontal className="size-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEdit(group)}>
-                          <Pencil className="size-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openMembers(group)}>
-                          <Users className="size-4" />
-                          Manage Members
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={() => setDeleteTarget(group)}
-                        >
-                          <Trash2 className="size-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          </div>
+          <Button onClick={openCreate}>
+            <Plus className="size-4 mr-1" />
+            Create Group
+          </Button>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={150}>
+        {groups.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <div className="rounded-full bg-muted p-4 mb-4">
+                <FolderOpen className="size-8 text-muted-foreground/50" />
+              </div>
+              <h3 className="text-lg font-medium">No groups yet</h3>
+              <p className="text-muted-foreground text-sm mt-1 mb-4">
+                Create a group to assign courses to multiple agents at once.
+              </p>
+              <Button onClick={openCreate}>
+                <Plus className="size-4 mr-1" />
+                Create Group
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="hover:shadow-md transition-shadow">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-center">Members</TableHead>
+                  <TableHead className="text-center">Created</TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
+              </TableHeader>
+              <TableBody>
+                {groups.map((group) => (
+                  <TableRow key={group.id} className="group/row">
+                    <TableCell className="font-medium">{group.name}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm max-w-xs truncate">
+                      {group.description || '-'}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openMembers(group)}
+                        className="text-xs"
+                      >
+                        <Users className="size-3.5 mr-1" />
+                        {group.memberCount}
+                      </Button>
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-muted-foreground">
+                      {new Date(group.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={<Button variant="ghost" size="icon-sm" />}
+                        >
+                          <MoreHorizontal className="size-4" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(group)}>
+                            <Pencil className="size-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openMembers(group)}>
+                            <Users className="size-4" />
+                            Manage Members
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => setDeleteTarget(group)}
+                          >
+                            <Trash2 className="size-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        )}
+      </FadeIn>
 
       {/* Create/Edit Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
@@ -394,10 +400,10 @@ export default function GroupsPage() {
                   {membersGroup?.members.map((m) => (
                     <div
                       key={m.id}
-                      className="flex items-center justify-between rounded-lg border px-3 py-2"
+                      className="flex items-center justify-between rounded-lg border px-3 py-2 hover:bg-muted/30 transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <div className="flex size-7 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                        <div className="flex size-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
                           {m.user.name.charAt(0).toUpperCase()}
                         </div>
                         <div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,7 @@ export default function Home() {
   const [email, setEmail] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -66,60 +67,91 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Floating Navigation */}
+      {/* Navigation */}
       <header
-        className={`fixed top-0 z-50 w-full transition-all duration-500 ease-out ${
-          scrolled
-            ? 'top-4 left-1/2 -translate-x-1/2 max-w-3xl px-2'
-            : 'top-0 left-0 translate-x-0 max-w-none px-0'
-        }`}
+        ref={headerRef}
+        className="fixed top-0 left-0 right-0 z-50 flex justify-center transition-[padding] duration-500 ease-out"
+        style={{ padding: scrolled ? '12px 16px 0' : '0' }}
       >
         <nav
-          className={`transition-all duration-500 ease-out ${
-            scrolled
-              ? 'mx-auto rounded-full nav-floating px-6 py-2.5'
-              : 'border-b border-dashed bg-background/80 backdrop-blur-sm px-6 py-0'
-          }`}
+          className="w-full transition-all duration-500 ease-out"
+          style={{
+            maxWidth: scrolled ? '720px' : '100%',
+            borderRadius: scrolled ? '9999px' : '0',
+          }}
         >
-          <div className={`flex items-center justify-between ${scrolled ? '' : 'mx-auto max-w-6xl h-14'}`}>
-            <Link href="/" className="flex items-center gap-2">
-              <GraduationCap className={`text-primary transition-all duration-300 ${scrolled ? 'size-5' : 'size-6'}`} />
-              <span className={`font-bold tracking-tight transition-all duration-300 ${scrolled ? 'text-sm' : 'text-lg'}`}>
-                SalesTrack Academy
-              </span>
-            </Link>
+          <div
+            className={`transition-all duration-500 ease-out ${
+              scrolled
+                ? 'nav-floating rounded-full px-5 py-2'
+                : 'border-b border-border/40 bg-background/80 backdrop-blur-sm px-6'
+            }`}
+          >
+            <div className={`flex items-center justify-between transition-all duration-500 ${scrolled ? '' : 'mx-auto max-w-6xl h-14'}`}>
+              <Link href="/" className="flex items-center gap-2">
+                <GraduationCap
+                  className="text-primary transition-all duration-500"
+                  style={{ width: scrolled ? 18 : 24, height: scrolled ? 18 : 24 }}
+                />
+                <span
+                  className="font-bold tracking-tight transition-all duration-500"
+                  style={{ fontSize: scrolled ? '13px' : '18px' }}
+                >
+                  SalesTrack Academy
+                </span>
+              </Link>
 
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="relative z-20 p-2 lg:hidden"
-              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            >
-              {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-            </button>
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="relative z-20 p-2 lg:hidden"
+                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              >
+                {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+              </button>
 
-            <div className="hidden items-center gap-2 lg:flex">
-              <Link href="#features">
-                <Button variant="ghost" size="sm" className={`transition-all duration-300 ${scrolled ? 'h-8 text-xs' : ''}`}>
-                  Features
-                </Button>
-              </Link>
-              <Link href="/public/login">
-                <Button variant="ghost" size="sm" className={`transition-all duration-300 ${scrolled ? 'h-8 text-xs' : ''}`}>
-                  Login
-                </Button>
-              </Link>
-              <Link href="/public/signup">
-                <Button size="sm" className={`transition-all duration-300 ${scrolled ? 'h-8 text-xs rounded-full px-4' : ''}`}>
-                  Sign Up
-                </Button>
-              </Link>
+              <div className="hidden items-center gap-1 lg:flex">
+                <Link href="#features">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="transition-all duration-500 text-foreground/70 hover:text-foreground"
+                    style={{ height: scrolled ? 32 : 36, fontSize: scrolled ? '12px' : '14px' }}
+                  >
+                    Features
+                  </Button>
+                </Link>
+                <Link href="/public/login">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="transition-all duration-500 text-foreground/70 hover:text-foreground"
+                    style={{ height: scrolled ? 32 : 36, fontSize: scrolled ? '12px' : '14px' }}
+                  >
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/public/signup">
+                  <Button
+                    size="sm"
+                    className="transition-all duration-500 rounded-full"
+                    style={{
+                      height: scrolled ? 30 : 36,
+                      fontSize: scrolled ? '12px' : '14px',
+                      paddingLeft: scrolled ? '14px' : '16px',
+                      paddingRight: scrolled ? '14px' : '16px',
+                    }}
+                  >
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
 
           {/* Mobile menu */}
           {menuOpen && !scrolled && (
-            <div className="border-t pb-4 pt-2 lg:hidden">
-              <div className="flex flex-col gap-2 mx-auto max-w-6xl">
+            <div className="border-t bg-background/95 backdrop-blur-sm pb-4 pt-2 lg:hidden">
+              <div className="flex flex-col gap-2 mx-auto max-w-6xl px-6">
                 <Link href="#features" onClick={() => setMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-start">Features</Button>
                 </Link>
@@ -194,7 +226,7 @@ export default function Home() {
 
               {/* Hero visual */}
               <FadeIn delay={400} duration={800} direction="left" distance={30} className="relative mt-16 lg:mt-0 lg:w-1/2">
-                <div className="relative rounded-2xl border bg-muted/30 p-6 shadow-lg backdrop-blur-sm">
+                <div className="relative rounded-2xl border bg-muted/30 p-6 shadow-lg">
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
                       <div className="rounded-lg bg-primary/10 p-2">
@@ -226,7 +258,7 @@ export default function Home() {
                           </div>
                           <div className="h-1.5 w-16 rounded-full bg-muted">
                             <div
-                              className="h-full rounded-full bg-primary transition-all duration-1000"
+                              className="h-full rounded-full bg-primary"
                               style={{ width: `${[95, 72, 45][i]}%` }}
                             />
                           </div>
@@ -261,13 +293,13 @@ export default function Home() {
               className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
             >
               {features.map((feature) => (
-                <Card key={feature.title} className="border-dashed group hover:border-primary/30 hover:shadow-md transition-all duration-300">
+                <Card key={feature.title} className="border-dashed group hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
                   <CardContent className="pt-6">
-                    <div className="mb-4 rounded-lg bg-primary/10 p-2.5 w-fit group-hover:bg-primary/15 transition-colors">
+                    <div className="mb-4 rounded-lg bg-primary/10 p-2.5 w-fit group-hover:bg-primary/15 transition-colors duration-300">
                       <feature.icon className="size-5 text-primary" />
                     </div>
                     <h3 className="font-semibold">{feature.title}</h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
+                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
                       {feature.description}
                     </p>
                   </CardContent>
