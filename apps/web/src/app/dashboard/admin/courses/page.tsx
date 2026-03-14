@@ -26,6 +26,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { FadeIn } from '@/components/animations/fade-in';
 import {
   getCourses, createCourse, updateCourse, deleteCourse,
   type Course,
@@ -142,126 +143,132 @@ export default function CoursesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Courses</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your training courses.
-          </p>
+      <FadeIn duration={500}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Courses</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your training courses.
+            </p>
+          </div>
+          <Button onClick={openCreate}>
+            <Plus className="size-4 mr-1" />
+            Create Course
+          </Button>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="size-4 mr-1" />
-          Create Course
-        </Button>
-      </div>
+      </FadeIn>
 
       {courses.length > 0 && (
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search courses..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
+        <FadeIn delay={100}>
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search courses..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </FadeIn>
       )}
 
-      {courses.length === 0 && !search ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="rounded-full bg-muted p-4 mb-4">
-              <BookOpen className="size-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-medium">No courses yet</h3>
-            <p className="text-muted-foreground text-sm mt-1 mb-4">
-              Create your first course to get started.
-            </p>
-            <Button onClick={openCreate}>
-              <Plus className="size-4 mr-1" />
-              Create Course
-            </Button>
-          </CardContent>
-        </Card>
-      ) : courses.length === 0 && search ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground text-sm">
-              No courses match your search.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-center">Lessons</TableHead>
-                <TableHead className="text-center">Quizzes</TableHead>
-                <TableHead className="text-center">Assigned</TableHead>
-                <TableHead className="w-12" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {courses.map((course) => (
-                <TableRow key={course.id}>
-                  <TableCell>
-                    <Link href={`/dashboard/admin/courses/${course.id}`} className="block group">
-                      <span className="font-medium group-hover:underline">{course.title}</span>
-                      {course.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                          {course.description}
-                        </p>
-                      )}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant={course.isPublished ? 'default' : 'secondary'}>
-                      {course.isPublished ? 'Published' : 'Draft'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-center">{course.lessonCount}</TableCell>
-                  <TableCell className="text-center">{course.quizCount}</TableCell>
-                  <TableCell className="text-center">{course.assignmentCount}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={<Button variant="ghost" size="icon-sm" />}
-                      >
-                        <MoreHorizontal className="size-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEdit(course)}>
-                          <Pencil className="size-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleTogglePublish(course)}>
-                          {course.isPublished ? (
-                            <EyeOff className="size-4" />
-                          ) : (
-                            <Eye className="size-4" />
-                          )}
-                          {course.isPublished ? 'Unpublish' : 'Publish'}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={() => setDeleteTarget(course)}
-                        >
-                          <Trash2 className="size-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+      <FadeIn delay={150}>
+        {courses.length === 0 && !search ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <div className="rounded-full bg-muted p-4 mb-4">
+                <BookOpen className="size-8 text-muted-foreground/50" />
+              </div>
+              <h3 className="text-lg font-medium">No courses yet</h3>
+              <p className="text-muted-foreground text-sm mt-1 mb-4">
+                Create your first course to get started.
+              </p>
+              <Button onClick={openCreate}>
+                <Plus className="size-4 mr-1" />
+                Create Course
+              </Button>
+            </CardContent>
+          </Card>
+        ) : courses.length === 0 && search ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <p className="text-muted-foreground text-sm">
+                No courses match your search.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="hover:shadow-md transition-shadow">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-center">Lessons</TableHead>
+                  <TableHead className="text-center">Quizzes</TableHead>
+                  <TableHead className="text-center">Assigned</TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
+              </TableHeader>
+              <TableBody>
+                {courses.map((course) => (
+                  <TableRow key={course.id} className="group/row">
+                    <TableCell>
+                      <Link href={`/dashboard/admin/courses/${course.id}`} className="block group">
+                        <span className="font-medium group-hover:text-primary transition-colors">{course.title}</span>
+                        {course.description && (
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                            {course.description}
+                          </p>
+                        )}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant={course.isPublished ? 'default' : 'secondary'}>
+                        {course.isPublished ? 'Published' : 'Draft'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center tabular-nums">{course.lessonCount}</TableCell>
+                    <TableCell className="text-center tabular-nums">{course.quizCount}</TableCell>
+                    <TableCell className="text-center tabular-nums">{course.assignmentCount}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={<Button variant="ghost" size="icon-sm" />}
+                        >
+                          <MoreHorizontal className="size-4" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(course)}>
+                            <Pencil className="size-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleTogglePublish(course)}>
+                            {course.isPublished ? (
+                              <EyeOff className="size-4" />
+                            ) : (
+                              <Eye className="size-4" />
+                            )}
+                            {course.isPublished ? 'Unpublish' : 'Publish'}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => setDeleteTarget(course)}
+                          >
+                            <Trash2 className="size-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        )}
+      </FadeIn>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">

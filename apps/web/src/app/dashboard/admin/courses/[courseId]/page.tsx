@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   ArrowLeft, BookOpen, Plus, ChevronUp, ChevronDown,
   Pencil, Trash2, Video, Headphones, FileText, Type,
-  ClipboardList, Users,
+  ClipboardList, Users, Eye,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -246,7 +247,7 @@ export default function CourseDetailPage() {
                     <TableHead className="text-center">Type</TableHead>
                     <TableHead className="text-center">Duration</TableHead>
                     <TableHead className="w-28 text-center">Order</TableHead>
-                    <TableHead className="w-20" />
+                    <TableHead className="w-24" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -255,7 +256,14 @@ export default function CourseDetailPage() {
                     return (
                       <TableRow key={lesson.id}>
                         <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
-                        <TableCell className="font-medium">{lesson.title}</TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/dashboard/admin/courses/${courseId}/lessons/${lesson.id}`}
+                            className="font-medium hover:text-primary transition-colors hover:underline"
+                          >
+                            {lesson.title}
+                          </Link>
+                        </TableCell>
                         <TableCell className="text-center">
                           <Badge variant="secondary">
                             <Icon className="size-3 mr-0.5" />
@@ -287,6 +295,11 @@ export default function CourseDetailPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
+                            <Link href={`/dashboard/admin/courses/${courseId}/lessons/${lesson.id}`}>
+                              <Button variant="ghost" size="icon-xs">
+                                <Eye className="size-3.5" />
+                              </Button>
+                            </Link>
                             <Button
                               variant="ghost"
                               size="icon-xs"

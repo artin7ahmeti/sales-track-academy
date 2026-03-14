@@ -16,6 +16,12 @@ export interface PaginatedResponse<T> {
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
+interface InviteUserResponse {
+  invitationId: string;
+  emailStatus: 'sent' | 'skipped' | 'failed';
+  inviteUrl?: string;
+}
+
 export function getUsers(params?: { page?: number; limit?: number; search?: string; role?: string; isActive?: boolean }) {
   const query = new URLSearchParams();
   if (params?.page) query.set('page', String(params.page));
@@ -44,5 +50,5 @@ export function deleteUser(id: string) {
 }
 
 export function inviteUser(data: { email: string; role: string; groupIds?: string[] }) {
-  return apiClient.post<{ invitationId: string; token: string }>('/users/invite', data);
+  return apiClient.post<InviteUserResponse>('/users/invite', data);
 }

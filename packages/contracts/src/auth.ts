@@ -37,3 +37,9 @@ export interface AcceptInviteRequest {
   name: string;
   password: string;
 }
+
+export interface AcceptInviteResponse {
+  message: string;
+  userId: string;
+  email: string;
+}

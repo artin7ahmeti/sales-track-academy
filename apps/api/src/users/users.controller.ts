@@ -83,7 +83,7 @@ export class UsersController {
   @Post('invite')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Invite user (admin)' })
-  @ApiOkResponse({ description: 'Invitation created and email sent if SMTP configured.' })
+  @ApiOkResponse({ description: 'Invitation created with delivery status and a fallback invite URL when email is not sent.' })
   invite(@Body() dto: InviteUserDto, @CurrentUser() user: { id: string }) {
     return this.usersService.invite(dto, user.id);
   }
