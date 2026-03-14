@@ -19,7 +19,6 @@ import { ConfirmUploadDto } from './dto/confirm-upload.dto';
 
 @Controller('storage')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
 @ApiTags('Storage')
 @ApiBearerAuth('bearer')
 @ApiCookieAuth('access_token')
@@ -27,6 +26,7 @@ export class StorageController {
   constructor(private readonly storageAppService: StorageAppService) {}
 
   @Post('upload-url')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get presigned upload URL (admin)' })
   @ApiOkResponse({ description: 'Presigned upload URL and object key.' })
   getUploadUrl(@Body() dto: UploadUrlDto) {
@@ -36,6 +36,7 @@ export class StorageController {
   }
 
   @Post('confirm')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Confirm uploaded object (admin)' })
   @ApiOkResponse({ description: 'Public/consumable URL for uploaded object.' })
   confirmUpload(@Body() dto: ConfirmUploadDto) {
@@ -43,10 +44,14 @@ export class StorageController {
   }
 
   @Get('download-url')
-  @ApiOperation({ summary: 'Get presigned download URL (admin)' })
+  @ApiOperation({ summary: 'Get presigned download URL' })
   @ApiQuery({ name: 'key', required: true, description: 'Storage object key' })
+  @ApiQuery({ name: 'inline', required: false, description: 'Set Content-Disposition to inline' })
   @ApiOkResponse({ description: 'Presigned temporary download URL.' })
-  getDownloadUrl(@Query('key') key: string) {
-    return this.storageAppService.getDownloadUrl(key);
+  getDownloadUrl(
+    @Query('key') key: string,
+    @Query('inline') inline?: string,
+  ) {
+    return this.storageAppService.getDownloadUrl(key, inline === 'true');
   }
 }

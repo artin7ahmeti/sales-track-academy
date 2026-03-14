@@ -24,8 +24,8 @@ export class StorageAppService {
     return { uploadUrl, key, expiresIn: PRESIGNED_EXPIRES_IN };
   }
 
-  async getDownloadUrl(key: string) {
-    const url = await this.storage.getDownloadUrl(key, PRESIGNED_EXPIRES_IN);
+  async getDownloadUrl(key: string, inline?: boolean) {
+    const url = await this.storage.getDownloadUrl(key, PRESIGNED_EXPIRES_IN, inline);
     return { url, expiresIn: PRESIGNED_EXPIRES_IN };
   }
 
