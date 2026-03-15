@@ -1,14 +1,4 @@
-import { IsObject } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
+import { SubmitAttemptSchema } from '@salestrack/contracts';
 
-export class SubmitAttemptDto {
-  @ApiProperty({
-    example: {
-      qst_123: 'opt_abc',
-      qst_456: 'opt_def',
-    },
-    description: 'Map of questionId -> selectedOptionId',
-  })
-  @IsObject()
-  answers!: Record<string, string>; // questionId -> selectedOptionId
-}
+export class SubmitAttemptDto extends createZodDto(SubmitAttemptSchema) {}

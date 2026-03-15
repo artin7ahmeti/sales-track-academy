@@ -1,11 +1,4 @@
-import { IsString } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
+import { RefreshTokenSchema } from '@salestrack/contracts';
 
-export class RefreshTokenDto {
-  @ApiProperty({
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    description: 'Refresh token returned during login/signup',
-  })
-  @IsString()
-  refreshToken!: string;
-}
+export class RefreshTokenDto extends createZodDto(RefreshTokenSchema) {}

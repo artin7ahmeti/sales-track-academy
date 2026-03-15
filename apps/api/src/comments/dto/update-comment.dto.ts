@@ -1,9 +1,4 @@
-import { IsString, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
+import { UpdateCommentSchema } from '@salestrack/contracts';
 
-export class UpdateCommentDto {
-  @ApiProperty({ example: 'Updated comment body.' })
-  @IsString()
-  @MinLength(1)
-  body!: string;
-}
+export class UpdateCommentDto extends createZodDto(UpdateCommentSchema) {}

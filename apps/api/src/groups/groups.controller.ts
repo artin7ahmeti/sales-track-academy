@@ -9,7 +9,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { GroupsService } from './groups.service';
@@ -33,8 +32,6 @@ export class GroupsController {
 
   @Get()
   @ApiOperation({ summary: 'List groups (admin)' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({ description: 'Paginated group list.' })
   findAll(@Query() query: PaginationQueryDto) {
     return this.groupsService.findAll(query);

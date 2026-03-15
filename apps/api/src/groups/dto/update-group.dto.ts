@@ -1,15 +1,4 @@
-import { IsString, IsOptional, MinLength } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
+import { UpdateGroupSchema } from '@salestrack/contracts';
 
-export class UpdateGroupDto {
-  @ApiPropertyOptional({ example: 'Updated Group Name' })
-  @IsOptional()
-  @IsString()
-  @MinLength(1)
-  name?: string;
-
-  @ApiPropertyOptional({ example: 'Updated group description' })
-  @IsOptional()
-  @IsString()
-  description?: string;
-}
+export class UpdateGroupDto extends createZodDto(UpdateGroupSchema) {}

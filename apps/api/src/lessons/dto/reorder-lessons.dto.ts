@@ -1,13 +1,4 @@
-import { IsArray, IsString } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
+import { ReorderLessonsSchema } from '@salestrack/contracts';
 
-export class ReorderLessonsDto {
-  @ApiProperty({
-    type: [String],
-    example: ['lesson_1', 'lesson_2', 'lesson_3'],
-    description: 'Ordered lesson id list',
-  })
-  @IsArray()
-  @IsString({ each: true })
-  lessonIds!: string[];
-}
+export class ReorderLessonsDto extends createZodDto(ReorderLessonsSchema) {}

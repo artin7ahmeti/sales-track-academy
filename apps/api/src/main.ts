@@ -1,12 +1,13 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { cleanupOpenApiDoc } from 'nestjs-zod';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { AppZodValidationPipe } from './common/pipes/app-zod-validation.pipe';
 
 function parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
   if (value === undefined) return defaultValue;
@@ -38,16 +39,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Global pipes
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }),
-  );
+  app.useGlobalPipes(new AppZodValidationPipe());
 
   // Global filters
   app.useGlobalFilters(new HttpExceptionFilter(), new PrismaExceptionFilter());
@@ -83,7 +75,7 @@ async function bootstrap() {
         in: 'cookie',
       }, 'access_token')
       .build();
-    const documentFactory = () => SwaggerModule.createDocument(app, config);
+    const documentFactory = () => cleanupOpenApiDoc(SwaggerModule.createDocument(app, config));
 
     SwaggerModule.setup('api/docs', app, documentFactory, {
       jsonDocumentUrl: 'api/docs-json',

@@ -9,7 +9,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
@@ -34,11 +33,6 @@ export class UsersController {
   @Get()
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'List users (admin)' })
-  @ApiQuery({ name: 'search', required: false })
-  @ApiQuery({ name: 'role', required: false, enum: Role })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({ description: 'Paginated user list.' })
   findAll(@Query() query: UserListQueryDto) {
     return this.usersService.findAll(query);
