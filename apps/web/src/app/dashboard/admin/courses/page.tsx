@@ -421,10 +421,13 @@ export default function CoursesPage() {
               <Label>Thumbnail</Label>
               {previewSrc ? (
                 <div className="relative group rounded-xl overflow-hidden border bg-muted">
-                  <img
+                  <Image
                     src={previewSrc}
                     alt="Thumbnail preview"
-                    className="w-full h-40 object-cover"
+                    width={1200}
+                    height={640}
+                    unoptimized
+                    className="h-40 w-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <Button

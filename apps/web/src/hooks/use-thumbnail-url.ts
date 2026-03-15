@@ -5,24 +5,27 @@ const cache = new Map<string, { url: string; expiresAt: number }>();
 const CACHE_TTL = 50 * 60 * 1000; // 50 minutes (presigned URLs last 60min)
 
 export function useThumbnailUrl(thumbnailKey: string | null | undefined) {
-  const [url, setUrl] = useState<string | null>(null);
+  const [resolvedUrl, setResolvedUrl] = useState<{ key: string; url: string } | null>(null);
+
+  const immediateUrl = (() => {
+    if (!thumbnailKey) {
+      return null;
+    }
+
+    if (thumbnailKey.startsWith('http')) {
+      return thumbnailKey;
+    }
+
+    return cache.get(thumbnailKey)?.url ?? null;
+  })();
 
   useEffect(() => {
-    if (!thumbnailKey) {
-      setUrl(null);
+    if (!thumbnailKey || thumbnailKey.startsWith('http')) {
       return;
     }
 
-    // If it's already a full URL (legacy), use it directly
-    if (thumbnailKey.startsWith('http')) {
-      setUrl(thumbnailKey);
-      return;
-    }
-
-    // Check cache
     const cached = cache.get(thumbnailKey);
     if (cached && cached.expiresAt > Date.now()) {
-      setUrl(cached.url);
       return;
     }
 
@@ -31,14 +34,12 @@ export function useThumbnailUrl(thumbnailKey: string | null | undefined) {
       .then((res) => {
         if (cancelled) return;
         cache.set(thumbnailKey, { url: res.url, expiresAt: Date.now() + CACHE_TTL });
-        setUrl(res.url);
+        setResolvedUrl({ key: thumbnailKey, url: res.url });
       })
-      .catch(() => {
-        if (!cancelled) setUrl(null);
-      });
+      .catch(() => {});
 
     return () => { cancelled = true; };
   }, [thumbnailKey]);
 
-  return url;
+  return immediateUrl ?? (resolvedUrl && resolvedUrl.key === thumbnailKey ? resolvedUrl.url : null);
 }
