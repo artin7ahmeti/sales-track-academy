@@ -18,8 +18,22 @@ import {
   SelectContent, SelectItem,
 } from '@/components/ui/select';
 import { FadeIn, StaggerChildren } from '@/components/animations/fade-in';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useThumbnailUrl } from '@/hooks/use-thumbnail-url';
 import { getOrgAnalytics, getAgentProgress, type OrgAnalytics, type AgentProgress } from '@/lib/api/analytics';
 import { getUsers, type User as UserType } from '@/lib/api/users';
+
+function AgentAvatar({ avatarUrl, name, className }: { avatarUrl: string | null; name: string; className?: string }) {
+  const url = useThumbnailUrl(avatarUrl);
+  return (
+    <Avatar className={className ?? 'size-10'}>
+      {url ? <AvatarImage src={url} alt={name} /> : null}
+      <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+        {name.charAt(0).toUpperCase()}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
 
 type AccentColor = 'blue' | 'green' | 'amber' | 'purple';
 
@@ -46,7 +60,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
   ASSIGNED: { label: 'Not Started', variant: 'outline' },
 };
 
-function AgentDetailView({ agent, onBack }: { agent: AgentProgress; onBack: () => void }) {
+function AgentDetailView({ agent, avatarUrl, onBack }: { agent: AgentProgress; avatarUrl: string | null; onBack: () => void }) {
   return (
     <div className="space-y-6">
       <FadeIn duration={400}>
@@ -55,9 +69,7 @@ function AgentDetailView({ agent, onBack }: { agent: AgentProgress; onBack: () =
             <ArrowLeft className="size-4" />
           </Button>
           <div className="flex items-center gap-3 flex-1">
-            <div className="flex items-center justify-center size-10 rounded-full bg-primary/10">
-              <User className="size-5 text-primary" />
-            </div>
+            <AgentAvatar avatarUrl={avatarUrl} name={agent.userName} />
             <div>
               <h2 className="text-lg font-bold tracking-tight">{agent.userName}</h2>
               <p className="text-sm text-muted-foreground">Individual performance breakdown</p>
@@ -230,6 +242,7 @@ export default function AnalyticsPage() {
         </FadeIn>
         <AgentDetailView
           agent={agentData}
+          avatarUrl={agents.find((a) => a.id === selectedAgentId)?.avatarUrl ?? null}
           onBack={() => {
             setSelectedAgentId('');
             setAgentData(null);
@@ -307,7 +320,10 @@ export default function AnalyticsPage() {
                 <SelectContent>
                   {agents.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
-                      {a.name}
+                      <div className="flex items-center gap-2">
+                        <AgentAvatar avatarUrl={a.avatarUrl} name={a.name} className="size-5" />
+                        <span>{a.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>

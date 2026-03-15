@@ -25,12 +25,26 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { FadeIn } from '@/components/animations/fade-in';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useThumbnailUrl } from '@/hooks/use-thumbnail-url';
 import {
   getGroups, getGroup, createGroup, updateGroup, deleteGroup,
   addMembers, removeMembers,
   type Group, type GroupDetail,
 } from '@/lib/api/groups';
 import { getUsers, type User } from '@/lib/api/users';
+
+function MemberAvatar({ avatarUrl, name }: { avatarUrl: string | null; name: string }) {
+  const url = useThumbnailUrl(avatarUrl);
+  return (
+    <Avatar className="size-7">
+      {url ? <AvatarImage src={url} alt={name} /> : null}
+      <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+        {name.charAt(0).toUpperCase()}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -402,9 +416,7 @@ export default function GroupsPage() {
                       className="flex items-center justify-between rounded-lg border px-3 py-2 hover:bg-muted/30 transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <div className="flex size-7 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                          {m.user.name.charAt(0).toUpperCase()}
-                        </div>
+                        <MemberAvatar avatarUrl={m.user.avatarUrl} name={m.user.name} />
                         <div>
                           <span className="text-sm font-medium">{m.user.name}</span>
                           <p className="text-xs text-muted-foreground">{m.user.email}</p>

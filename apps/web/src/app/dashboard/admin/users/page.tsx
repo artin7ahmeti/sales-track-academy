@@ -29,10 +29,25 @@ import {
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { FadeIn } from '@/components/animations/fade-in';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useThumbnailUrl } from '@/hooks/use-thumbnail-url';
 import {
   getUsers, inviteUser, updateUser, deleteUser,
   type User,
 } from '@/lib/api/users';
+
+function UserAvatar({ user }: { user: User }) {
+  const url = useThumbnailUrl(user.avatarUrl);
+  const initial = user.name.charAt(0).toUpperCase();
+  return (
+    <Avatar className="size-8">
+      {url ? <AvatarImage src={url} alt={user.name} /> : null}
+      <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+        {initial}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -275,9 +290,7 @@ export default function UsersPage() {
                   <TableRow key={user.id} className="group/row">
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                          {user.name.charAt(0).toUpperCase()}
-                        </div>
+                        <UserAvatar user={user} />
                         <div>
                           <span className="font-medium">{user.name}</span>
                           <p className="text-xs text-muted-foreground">{user.email}</p>
