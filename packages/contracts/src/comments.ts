@@ -1,3 +1,22 @@
+import { z } from 'zod';
+
+// ─── Request schemas ─────────────────────────────────────
+
+export const CreateCommentSchema = z.object({
+  body: z.string().min(1),
+  parentId: z.string().optional(),
+});
+
+export type CreateCommentRequest = z.infer<typeof CreateCommentSchema>;
+
+export const UpdateCommentSchema = z.object({
+  body: z.string().min(1),
+});
+
+export type UpdateCommentRequest = z.infer<typeof UpdateCommentSchema>;
+
+// ─── Response types ──────────────────────────────────────
+
 export interface CommentResponse {
   id: string;
   lessonId: string;
@@ -13,13 +32,4 @@ export interface CommentResponse {
     role: string;
   };
   replies: CommentResponse[];
-}
-
-export interface CreateCommentRequest {
-  body: string;
-  parentId?: string;
-}
-
-export interface UpdateCommentRequest {
-  body: string;
 }

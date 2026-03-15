@@ -1,3 +1,42 @@
+import { z } from 'zod';
+import { PaginationParamsSchema } from './common';
+
+// ─── Request schemas ─────────────────────────────────────
+
+export const CreateCourseSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  thumbnailUrl: z.string().optional(),
+});
+
+export type CreateCourseRequest = z.infer<typeof CreateCourseSchema>;
+
+export const UpdateCourseSchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().optional(),
+  thumbnailUrl: z.string().optional(),
+  isPublished: z.boolean().optional(),
+});
+
+export type UpdateCourseRequest = z.infer<typeof UpdateCourseSchema>;
+
+export const AssignCourseSchema = z.object({
+  userIds: z.array(z.string()).optional(),
+  groupIds: z.array(z.string()).optional(),
+  dueDate: z.string().datetime().optional(),
+});
+
+export type AssignCourseRequest = z.infer<typeof AssignCourseSchema>;
+
+export const CourseListQuerySchema = PaginationParamsSchema.extend({
+  search: z.string().optional(),
+  isPublished: z.coerce.boolean().optional(),
+});
+
+export type CourseListParams = z.infer<typeof CourseListQuerySchema>;
+
+// ─── Response types ──────────────────────────────────────
+
 export interface CourseResponse {
   id: string;
   title: string;
@@ -45,29 +84,4 @@ export interface AgentCourseDetailResponse extends CourseDetailResponse {
   lessonProgress: Record<string, { isCompleted: boolean; progressPct: number }>;
   quizAttempts: Record<string, { score: number; passed: boolean }[]>;
   overallProgress: number;
-}
-
-export interface CreateCourseRequest {
-  title: string;
-  description?: string;
-  thumbnailUrl?: string;
-}
-
-export interface UpdateCourseRequest {
-  title?: string;
-  description?: string;
-  thumbnailUrl?: string;
-}
-
-export interface AssignCourseRequest {
-  userIds?: string[];
-  groupIds?: string[];
-  dueDate?: string;
-}
-
-export interface CourseListParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  isPublished?: boolean;
 }
