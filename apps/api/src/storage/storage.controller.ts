@@ -44,15 +44,7 @@ export class StorageController {
     @Body() dto: ConfirmUploadDto,
     @CurrentUser() user: { id: string; role: string },
   ) {
-    // user-avatar keys start with "user-avatar/{userId}/"
-    if (dto.key.startsWith('user-avatar/')) {
-      const keyUserId = dto.key.split('/')[1];
-      if (keyUserId !== user.id) {
-        throw new ForbiddenException('You can only confirm your own avatar upload');
-      }
-    } else if (user.role !== Role.ADMIN) {
-      throw new ForbiddenException('Only admins can confirm this upload type');
-    }
+    this.authorizeKeyAccess(dto.key, user);
     return this.storageAppService.confirmUpload(dto.key);
   }
 
@@ -79,6 +71,17 @@ export class StorageController {
       }
     } else if (user.role !== Role.ADMIN) {
       throw new ForbiddenException('Only admins can upload this entity type');
+    }
+  }
+
+  private authorizeKeyAccess(key: string, user: { id: string; role: string }) {
+    if (key.startsWith('user-avatar/')) {
+      const keyUserId = key.split('/')[1];
+      if (keyUserId !== user.id) {
+        throw new ForbiddenException('You can only confirm your own avatar upload');
+      }
+    } else if (user.role !== Role.ADMIN) {
+      throw new ForbiddenException('Only admins can confirm this upload type');
     }
   }
 }

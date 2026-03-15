@@ -94,7 +94,7 @@ export function AppSidebar({ navigation }: AppSidebarProps) {
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user || uploading) return;
 
     if (file.size > MAX_AVATAR_SIZE) {
       alert('Image must be under 2 MB');
@@ -116,7 +116,7 @@ export function AppSidebar({ navigation }: AppSidebarProps) {
   }
 
   async function handleRemoveAvatar() {
-    if (!user) return;
+    if (!user || uploading) return;
     setUploading(true);
     try {
       await updateMyProfile({ avatarUrl: null });

@@ -19,7 +19,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
-  updateUser: (updates: Partial<AuthUser>) => void;
+  updateUser: (updates: Pick<Partial<AuthUser>, 'name' | 'avatarUrl'>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return authUser;
   }, []);
 
-  const updateUser = useCallback((updates: Partial<AuthUser>) => {
+  const updateUser = useCallback((updates: Pick<Partial<AuthUser>, 'name' | 'avatarUrl'>) => {
     setUser((prev) => prev ? { ...prev, ...updates } : prev);
   }, []);
 

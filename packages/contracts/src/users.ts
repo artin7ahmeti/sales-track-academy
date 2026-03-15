@@ -17,7 +17,7 @@ export const UpdateUserSchema = z.object({
   name: z.string().min(1).optional(),
   role: RoleSchema.optional(),
   isActive: z.boolean().optional(),
-  avatarUrl: z.string().nullable().optional(),
+  avatarUrl: z.string().min(1).nullable().optional(),
 });
 
 export type UpdateUserRequest = z.infer<typeof UpdateUserSchema>;
@@ -40,7 +40,7 @@ export type UserListParams = z.infer<typeof UserListQuerySchema>;
 
 export const UpdateProfileSchema = z.object({
   name: z.string().min(1).optional(),
-  avatarUrl: z.string().nullable().optional(),
+  avatarUrl: z.string().min(1).nullable().optional(),
 });
 
 export type UpdateProfileRequest = z.infer<typeof UpdateProfileSchema>;
