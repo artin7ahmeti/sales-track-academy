@@ -16,7 +16,7 @@ export interface Course {
 
 export interface CourseDetail extends Course {
   lessons: { id: string; title: string; type: string; sortOrder: number; durationSec: number | null }[];
-  quizzes: { id: string; title: string; passingScore: number; questionCount: number; sortOrder: number }[];
+  quizzes: { id: string; title: string; lessonId: string | null; passingScore: number; questionCount: number; sortOrder: number }[];
 }
 
 export interface AgentCourse {

@@ -339,15 +339,32 @@ export default function CourseDetailPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Title</TableHead>
+                    <TableHead>Linked Lesson</TableHead>
                     <TableHead className="text-center">Questions</TableHead>
                     <TableHead className="text-center">Passing Score</TableHead>
                     <TableHead className="w-12" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedQuizzes.map((quiz) => (
+                  {sortedQuizzes.map((quiz) => {
+                    const linkedLesson = quiz.lessonId
+                      ? course.lessons.find((l) => l.id === quiz.lessonId)
+                      : null;
+                    return (
                     <TableRow key={quiz.id}>
                       <TableCell className="font-medium">{quiz.title}</TableCell>
+                      <TableCell className="text-sm">
+                        {linkedLesson ? (
+                          <Link
+                            href={`/dashboard/admin/courses/${courseId}/lessons/${linkedLesson.id}`}
+                            className="text-primary hover:underline"
+                          >
+                            {linkedLesson.title}
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-center">{quiz.questionCount}</TableCell>
                       <TableCell className="text-center">
                         <Badge variant="secondary">{quiz.passingScore}%</Badge>
@@ -362,7 +379,8 @@ export default function CourseDetailPage() {
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </Card>

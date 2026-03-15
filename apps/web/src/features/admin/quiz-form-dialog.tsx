@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
   DialogDescription, DialogFooter,
@@ -10,13 +10,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { createQuiz, type CreateQuizData } from '@/lib/api/quizzes';
+import { createQuiz, updateQuiz, type CreateQuizData, type QuizDetail } from '@/lib/api/quizzes';
 
 interface QuizFormDialogProps {
   courseId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  quiz?: QuizDetail | null;
+  lessonId?: string;
 }
 
 interface QuestionDraft {
@@ -28,13 +30,35 @@ function emptyQuestion(): QuestionDraft {
   return { text: '', options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] };
 }
 
+function quizToQuestions(quiz: QuizDetail): QuestionDraft[] {
+  return quiz.questions.map((q) => ({
+    text: q.text,
+    options: q.options.map((o) => ({ text: o.text, isCorrect: !!o.isCorrect })),
+  }));
+}
+
 export function QuizFormDialog({
-  courseId, open, onOpenChange, onSuccess,
+  courseId, open, onOpenChange, onSuccess, quiz, lessonId,
 }: QuizFormDialogProps) {
+  const isEditing = !!quiz;
   const [title, setTitle] = useState('');
   const [passingScore, setPassingScore] = useState('70');
   const [questions, setQuestions] = useState<QuestionDraft[]>([emptyQuestion()]);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      if (quiz) {
+        setTitle(quiz.title);
+        setPassingScore(String(quiz.passingScore));
+        setQuestions(quizToQuestions(quiz));
+      } else {
+        setTitle('');
+        setPassingScore('70');
+        setQuestions([emptyQuestion()]);
+      }
+    }
+  }, [open, quiz]);
 
   function updateQuestion(qi: number, field: string, value: string) {
     setQuestions((prev) =>
@@ -98,28 +122,40 @@ export function QuizFormDialog({
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const data: CreateQuizData = {
-        title,
-        passingScore: parseInt(passingScore),
-        questions: questions.map((q, qi) => ({
-          text: q.text,
-          sortOrder: qi,
-          options: q.options.map((o, oi) => ({
-            text: o.text,
-            sortOrder: oi,
-            isCorrect: o.isCorrect,
+      if (isEditing) {
+        await updateQuiz(courseId, quiz.id, {
+          title,
+          passingScore: parseInt(passingScore),
+          questions: questions.map((q) => ({
+            text: q.text,
+            options: q.options.map((o) => ({
+              text: o.text,
+              isCorrect: o.isCorrect,
+            })),
           })),
-        })),
-      };
-      await createQuiz(courseId, data);
-      toast.success('Quiz created');
-      setTitle('');
-      setPassingScore('70');
-      setQuestions([emptyQuestion()]);
+        });
+        toast.success('Quiz updated');
+      } else {
+        const data: CreateQuizData = {
+          title,
+          passingScore: parseInt(passingScore),
+          questions: questions.map((q, qi) => ({
+            text: q.text,
+            sortOrder: qi,
+            options: q.options.map((o, oi) => ({
+              text: o.text,
+              sortOrder: oi,
+              isCorrect: o.isCorrect,
+            })),
+          })),
+        };
+        await createQuiz(courseId, data, lessonId);
+        toast.success('Quiz created');
+      }
       onOpenChange(false);
       onSuccess();
     } catch {
-      toast.error('Failed to create quiz');
+      toast.error(isEditing ? 'Failed to update quiz' : 'Failed to create quiz');
     } finally {
       setSubmitting(false);
     }
@@ -129,9 +165,9 @@ export function QuizFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Quiz</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Quiz' : 'Create Quiz'}</DialogTitle>
           <DialogDescription>
-            Build a quiz with multiple-choice questions.
+            {isEditing ? 'Update quiz questions and settings.' : 'Build a quiz with multiple-choice questions.'}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -237,7 +273,7 @@ export function QuizFormDialog({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={submitting}>
-            {submitting ? 'Creating...' : 'Create Quiz'}
+            {submitting ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Quiz' : 'Create Quiz')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,6 +1,6 @@
 import {
-  Controller, Get, Post, Delete,
-  Body, Param, UseGuards, HttpCode, HttpStatus,
+  Controller, Get, Post, Patch, Delete,
+  Body, Param, Query, UseGuards, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -9,6 +9,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { QuizzesService } from './quizzes.service';
@@ -18,6 +19,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Role } from '@salestrack/contracts';
 import { CreateQuizDto } from './dto/create-quiz.dto';
+import { UpdateQuizDto } from './dto/update-quiz.dto';
 import { SubmitAttemptDto } from './dto/submit-attempt.dto';
 
 @Controller('courses/:courseId/quizzes')
@@ -34,6 +36,15 @@ export class QuizzesController {
   @ApiOkResponse({ description: 'Quizzes for the selected course.' })
   findAll(@Param('courseId') courseId: string) {
     return this.quizzesService.findByCourse(courseId);
+  }
+
+  @Get('by-lesson/:lessonId')
+  @ApiOperation({ summary: 'Get quiz linked to a lesson' })
+  @ApiParam({ name: 'courseId', description: 'Course id' })
+  @ApiParam({ name: 'lessonId', description: 'Lesson id' })
+  @ApiOkResponse({ description: 'Quiz for the lesson, or null.' })
+  findByLesson(@Param('lessonId') lessonId: string) {
+    return this.quizzesService.findByLesson(lessonId);
   }
 
   @Get(':id')
@@ -53,9 +64,24 @@ export class QuizzesController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Create quiz (admin)' })
   @ApiParam({ name: 'courseId', description: 'Course id' })
+  @ApiQuery({ name: 'lessonId', required: false, description: 'Link quiz to a lesson' })
   @ApiOkResponse({ description: 'Created quiz.' })
-  create(@Param('courseId') courseId: string, @Body() dto: CreateQuizDto) {
-    return this.quizzesService.create(courseId, dto);
+  create(
+    @Param('courseId') courseId: string,
+    @Body() dto: CreateQuizDto,
+    @Query('lessonId') lessonId?: string,
+  ) {
+    return this.quizzesService.create(courseId, dto, lessonId);
+  }
+
+  @Patch(':id')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Update quiz (admin)' })
+  @ApiParam({ name: 'courseId', description: 'Course id' })
+  @ApiParam({ name: 'id', description: 'Quiz id' })
+  @ApiOkResponse({ description: 'Updated quiz.' })
+  update(@Param('id') id: string, @Body() dto: UpdateQuizDto) {
+    return this.quizzesService.update(id, dto);
   }
 
   @Delete(':id')

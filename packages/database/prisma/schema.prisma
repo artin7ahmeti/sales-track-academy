@@ -151,6 +151,7 @@ model Lesson {
   course   Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
   progress LessonProgress[]
   comments Comment[]
+  quiz     Quiz?
 
   @@index([courseId, sortOrder])
   @@map("lessons")
@@ -161,6 +162,7 @@ model Lesson {
 model Quiz {
   id           String   @id @default(cuid())
   courseId      String   @map("course_id")
+  lessonId     String?  @unique @map("lesson_id")
   title        String
   description  String?
   passingScore Int      @default(80) @map("passing_score")
@@ -169,6 +171,7 @@ model Quiz {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   course    Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson    Lesson?       @relation(fields: [lessonId], references: [id], onDelete: SetNull)
   questions Question[]
   attempts  QuizAttempt[]
 
