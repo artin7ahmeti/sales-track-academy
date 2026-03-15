@@ -38,6 +38,13 @@ export const UserListQuerySchema = PaginationParamsSchema.extend({
 
 export type UserListParams = z.infer<typeof UserListQuerySchema>;
 
+export const UpdateProfileSchema = z.object({
+  name: z.string().min(1).optional(),
+  avatarUrl: z.string().nullable().optional(),
+});
+
+export type UpdateProfileRequest = z.infer<typeof UpdateProfileSchema>;
+
 // ─── Response types ──────────────────────────────────────
 
 export interface UserResponse {

@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { UserListQueryDto } from './dto/user-list-query.dto';
 import type { Prisma } from '@salestrack/database';
@@ -101,6 +102,18 @@ export class UsersService {
         passwordHash,
         role: dto.role,
       },
+      select: {
+        id: true, email: true, name: true, role: true,
+        isActive: true, avatarUrl: true, createdAt: true, updatedAt: true,
+      },
+    });
+  }
+
+  async updateProfile(id: string, dto: UpdateProfileDto) {
+    await this.ensureExists(id);
+    return this.prisma.user.update({
+      where: { id },
+      data: dto,
       select: {
         id: true, email: true, name: true, role: true,
         isActive: true, avatarUrl: true, createdAt: true, updatedAt: true,

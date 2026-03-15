@@ -19,6 +19,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Role } from '@salestrack/contracts';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { InviteUserDto } from './dto/invite-user.dto';
 import { UserListQueryDto } from './dto/user-list-query.dto';
 
@@ -29,6 +30,16 @@ import { UserListQueryDto } from './dto/user-list-query.dto';
 @ApiCookieAuth('access_token')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Patch('me')
+  @ApiOperation({ summary: 'Update own profile' })
+  @ApiOkResponse({ description: 'Updated user profile.' })
+  updateProfile(
+    @CurrentUser() user: { id: string },
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(user.id, dto);
+  }
 
   @Get()
   @Roles(Role.ADMIN)

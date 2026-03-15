@@ -45,6 +45,10 @@ export function updateUser(id: string, data: { name?: string; role?: string; isA
   return apiClient.patch<User>(`/users/${id}`, data);
 }
 
+export function updateMyProfile(data: { name?: string; avatarUrl?: string | null }) {
+  return apiClient.patch<User>('/users/me', data);
+}
+
 export function deleteUser(id: string) {
   return apiClient.delete(`/users/${id}`);
 }

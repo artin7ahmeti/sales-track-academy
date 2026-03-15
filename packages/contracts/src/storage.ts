@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const UploadUrlSchema = z.object({
   fileName: z.string().min(1),
   contentType: z.string().min(1),
-  entityType: z.enum(['course-thumbnail', 'lesson-content']),
+  entityType: z.enum(['course-thumbnail', 'lesson-content', 'user-avatar']),
   entityId: z.string().min(1),
 });
 

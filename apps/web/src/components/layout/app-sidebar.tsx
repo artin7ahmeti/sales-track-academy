@@ -1,10 +1,15 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import type { LucideIcon } from 'lucide-react';
-import { LogOut, GraduationCap } from 'lucide-react';
+import { LogOut, GraduationCap, Camera, Trash2, Loader2 } from 'lucide-react';
 import { useAuth } from '@/features/auth/auth-provider';
+import { useThumbnailUrl } from '@/hooks/use-thumbnail-url';
+import { getUploadUrl, confirmUpload } from '@/lib/api/storage';
+import { updateMyProfile } from '@/lib/api/users';
 import {
   Sidebar,
   SidebarContent,
@@ -17,9 +22,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024; // 2 MB
+const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/png,image/webp';
 
 export interface NavItem {
   title: string;
@@ -31,9 +44,44 @@ interface AppSidebarProps {
   navigation: NavItem[];
 }
 
+function uploadAvatar(file: File, userId: string): Promise<string> {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const { uploadUrl, key } = await getUploadUrl({
+        fileName: file.name,
+        contentType: file.type,
+        entityType: 'user-avatar',
+        entityId: userId,
+      });
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', uploadUrl);
+      xhr.setRequestHeader('Content-Type', file.type);
+
+      xhr.onload = async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          await confirmUpload(key);
+          resolve(key);
+        } else {
+          reject(new Error('Upload failed'));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Upload failed'));
+      xhr.send(file);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 export function AppSidebar({ navigation }: AppSidebarProps) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+
+  const avatarUrl = useThumbnailUrl(user?.avatarUrl);
 
   const initials = user?.name
     ?.split(' ')
@@ -43,6 +91,43 @@ export function AppSidebar({ navigation }: AppSidebarProps) {
     .slice(0, 2) || '??';
 
   const isAdmin = user?.role === 'ADMIN';
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.size > MAX_AVATAR_SIZE) {
+      alert('Image must be under 2 MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const key = await uploadAvatar(file, user.id);
+      const updated = await updateMyProfile({ avatarUrl: key });
+      updateUser({ avatarUrl: updated.avatarUrl });
+      setPopoverOpen(false);
+    } catch {
+      alert('Failed to upload avatar');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    if (!user) return;
+    setUploading(true);
+    try {
+      await updateMyProfile({ avatarUrl: null });
+      updateUser({ avatarUrl: null });
+      setPopoverOpen(false);
+    } catch {
+      alert('Failed to remove avatar');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <Sidebar className="sidebar-glow">
@@ -86,11 +171,79 @@ export function AppSidebar({ navigation }: AppSidebarProps) {
 
       <SidebarFooter className="border-t p-3">
         <div className="flex items-center gap-3 rounded-lg p-2 hover:bg-muted/50 transition-colors">
-          <Avatar className="size-8 ring-2 ring-background">
-            <AvatarFallback className={`text-xs font-medium ${isAdmin ? 'bg-primary/10 text-primary' : 'bg-muted'}`}>
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+            <PopoverTrigger
+              className="relative cursor-pointer group/avatar-trigger shrink-0"
+              aria-label="Change profile picture"
+            >
+              <Avatar className="size-8 ring-2 ring-background">
+                {avatarUrl ? (
+                  <AvatarImage src={avatarUrl} alt={user?.name || ''} />
+                ) : null}
+                <AvatarFallback className={`text-xs font-medium ${isAdmin ? 'bg-primary/10 text-primary' : 'bg-muted'}`}>
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover/avatar-trigger:opacity-100 transition-opacity flex items-center justify-center">
+                <Camera className="size-3.5 text-white" />
+              </div>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="start" sideOffset={8} className="w-56 p-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_IMAGE_TYPES}
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+
+              {avatarUrl && (
+                <div className="flex justify-center mb-2 pt-1">
+                  <Image
+                    src={avatarUrl}
+                    alt="Current avatar"
+                    width={80}
+                    height={80}
+                    className="size-20 rounded-full object-cover ring-2 ring-border"
+                    unoptimized
+                  />
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start text-xs h-8"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploading ? (
+                    <Loader2 className="size-3.5 mr-2 animate-spin" />
+                  ) : (
+                    <Camera className="size-3.5 mr-2" />
+                  )}
+                  {user?.avatarUrl ? 'Change Photo' : 'Upload Photo'}
+                </Button>
+                {user?.avatarUrl && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start text-xs h-8 text-destructive hover:text-destructive"
+                    disabled={uploading}
+                    onClick={handleRemoveAvatar}
+                  >
+                    {uploading ? (
+                      <Loader2 className="size-3.5 mr-2 animate-spin" />
+                    ) : (
+                      <Trash2 className="size-3.5 mr-2" />
+                    )}
+                    Remove Photo
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate leading-tight">{user?.name}</p>
             <Badge
