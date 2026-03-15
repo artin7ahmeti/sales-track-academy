@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageAppService } from '../storage/storage-app.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import type { Prisma } from '@salestrack/database';
 
 @Injectable()
 export class LessonsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageAppService,
+  ) {}
 
   async findByCourse(courseId: string) {
     return this.prisma.lesson.findMany({
@@ -41,7 +45,14 @@ export class LessonsService {
   }
 
   async update(id: string, dto: UpdateLessonDto) {
-    await this.ensureExists(id);
+    const existing = await this.ensureExists(id);
+    if (dto.content !== undefined) {
+      const oldKey = this.extractS3Key(existing.content);
+      const newKey = this.extractS3Key(dto.content);
+      if (oldKey && oldKey !== newKey) {
+        this.storage.deleteFile(oldKey).catch(() => {});
+      }
+    }
     const data: Prisma.LessonUpdateInput = {};
     if (dto.title !== undefined) data.title = dto.title;
     if (dto.description !== undefined) data.description = dto.description;
@@ -52,7 +63,11 @@ export class LessonsService {
   }
 
   async remove(id: string) {
-    await this.ensureExists(id);
+    const existing = await this.ensureExists(id);
+    const s3Key = this.extractS3Key(existing.content);
+    if (s3Key) {
+      this.storage.deleteFile(s3Key).catch(() => {});
+    }
     await this.prisma.lesson.delete({ where: { id } });
   }
 
@@ -146,6 +161,14 @@ export class LessonsService {
         data: { status: 'IN_PROGRESS' },
       });
     }
+  }
+
+  private extractS3Key(content: unknown): string | null {
+    if (content && typeof content === 'object' && 's3Key' in content) {
+      const key = (content as Record<string, unknown>).s3Key;
+      return typeof key === 'string' && key.length > 0 ? key : null;
+    }
+    return null;
   }
 
   private async ensureExists(id: string) {

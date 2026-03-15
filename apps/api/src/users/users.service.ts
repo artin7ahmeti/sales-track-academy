@@ -6,6 +6,7 @@ import {
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { StorageAppService } from '../storage/storage-app.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -18,6 +19,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
+    private readonly storage: StorageAppService,
   ) {}
 
   async findAll(query: UserListQueryDto) {
@@ -110,7 +112,10 @@ export class UsersService {
   }
 
   async updateProfile(id: string, dto: UpdateProfileDto) {
-    await this.ensureExists(id);
+    const existing = await this.ensureExists(id);
+    if ('avatarUrl' in dto && existing.avatarUrl && existing.avatarUrl !== dto.avatarUrl) {
+      this.storage.deleteFile(existing.avatarUrl).catch(() => {});
+    }
     return this.prisma.user.update({
       where: { id },
       data: dto,
@@ -122,7 +127,10 @@ export class UsersService {
   }
 
   async update(id: string, dto: UpdateUserDto) {
-    await this.ensureExists(id);
+    const existing = await this.ensureExists(id);
+    if ('avatarUrl' in dto && existing.avatarUrl && existing.avatarUrl !== dto.avatarUrl) {
+      this.storage.deleteFile(existing.avatarUrl).catch(() => {});
+    }
     return this.prisma.user.update({
       where: { id },
       data: dto,
