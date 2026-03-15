@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
+import { UpdateQuizDto } from './dto/update-quiz.dto';
 
 @Injectable()
 export class QuizzesService {
@@ -16,6 +17,7 @@ export class QuizzesService {
     return quizzes.map((q) => ({
       id: q.id,
       courseId: q.courseId,
+      lessonId: q.lessonId,
       title: q.title,
       description: q.description,
       passingScore: q.passingScore,
@@ -24,6 +26,49 @@ export class QuizzesService {
       createdAt: q.createdAt,
       updatedAt: q.updatedAt,
     }));
+  }
+
+  async findByLesson(lessonId: string) {
+    const quiz = await this.prisma.quiz.findUnique({
+      where: { lessonId },
+      include: {
+        _count: { select: { questions: true } },
+        questions: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            options: {
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+        },
+      },
+    });
+
+    if (!quiz) return null;
+
+    return {
+      id: quiz.id,
+      courseId: quiz.courseId,
+      lessonId: quiz.lessonId,
+      title: quiz.title,
+      description: quiz.description,
+      passingScore: quiz.passingScore,
+      sortOrder: quiz.sortOrder,
+      questionCount: quiz._count.questions,
+      createdAt: quiz.createdAt,
+      updatedAt: quiz.updatedAt,
+      questions: quiz.questions.map((q) => ({
+        id: q.id,
+        text: q.text,
+        sortOrder: q.sortOrder,
+        options: q.options.map((o) => ({
+          id: o.id,
+          text: o.text,
+          sortOrder: o.sortOrder,
+          isCorrect: o.isCorrect,
+        })),
+      })),
+    };
   }
 
   async findOne(id: string, includeCorrect = false) {
@@ -53,6 +98,7 @@ export class QuizzesService {
     return {
       id: quiz.id,
       courseId: quiz.courseId,
+      lessonId: quiz.lessonId,
       title: quiz.title,
       description: quiz.description,
       passingScore: quiz.passingScore,
@@ -69,7 +115,14 @@ export class QuizzesService {
     };
   }
 
-  async create(courseId: string, dto: CreateQuizDto) {
+  async create(courseId: string, dto: CreateQuizDto, lessonId?: string) {
+    if (lessonId) {
+      const existing = await this.prisma.quiz.findUnique({ where: { lessonId } });
+      if (existing) {
+        throw new BadRequestException('This lesson already has a quiz');
+      }
+    }
+
     const maxOrder = await this.prisma.quiz.aggregate({
       where: { courseId },
       _max: { sortOrder: true },
@@ -78,6 +131,7 @@ export class QuizzesService {
     return this.prisma.quiz.create({
       data: {
         courseId,
+        lessonId: lessonId || null,
         title: dto.title,
         description: dto.description,
         passingScore: dto.passingScore ?? 80,
@@ -99,6 +153,56 @@ export class QuizzesService {
       include: {
         _count: { select: { questions: true } },
       },
+    });
+  }
+
+  async update(id: string, dto: UpdateQuizDto) {
+    const quiz = await this.prisma.quiz.findUnique({ where: { id } });
+    if (!quiz) throw new NotFoundException('Quiz not found');
+
+    return this.prisma.$transaction(async (tx) => {
+      if (dto.questions) {
+        await tx.answerOption.deleteMany({
+          where: { question: { quizId: id } },
+        });
+        await tx.question.deleteMany({ where: { quizId: id } });
+
+        for (let qi = 0; qi < dto.questions.length; qi++) {
+          const q = dto.questions[qi]!;
+          await tx.question.create({
+            data: {
+              quizId: id,
+              text: q.text,
+              sortOrder: qi,
+              options: {
+                create: q.options.map((o, oi) => ({
+                  text: o.text,
+                  isCorrect: o.isCorrect,
+                  sortOrder: oi,
+                })),
+              },
+            },
+          });
+        }
+      }
+
+      return tx.quiz.update({
+        where: { id },
+        data: {
+          ...(dto.title !== undefined && { title: dto.title }),
+          ...(dto.description !== undefined && { description: dto.description }),
+          ...(dto.passingScore !== undefined && { passingScore: dto.passingScore }),
+        },
+        include: {
+          _count: { select: { questions: true } },
+          questions: {
+            orderBy: { sortOrder: 'asc' },
+            include: {
+              options: { orderBy: { sortOrder: 'asc' } },
+            },
+          },
+        },
+      });
     });
   }
 
@@ -158,6 +262,27 @@ export class QuizzesService {
       },
     });
 
+    // If passed and quiz is linked to a lesson, auto-complete the lesson
+    if (passed && quiz.lessonId) {
+      await this.prisma.lessonProgress.upsert({
+        where: { lessonId_userId: { lessonId: quiz.lessonId, userId } },
+        create: {
+          lessonId: quiz.lessonId,
+          userId,
+          progressPct: 100,
+          isCompleted: true,
+          completedAt: new Date(),
+        },
+        update: {
+          progressPct: 100,
+          isCompleted: true,
+          completedAt: new Date(),
+        },
+      });
+
+      await this.checkCourseCompletion(quiz.courseId, userId);
+    }
+
     return {
       id: attempt.id,
       quizId: attempt.quizId,
@@ -179,5 +304,28 @@ export class QuizzesService {
         passed: true, startedAt: true, completedAt: true,
       },
     });
+  }
+
+  private async checkCourseCompletion(courseId: string, userId: string) {
+    const totalLessons = await this.prisma.lesson.count({ where: { courseId } });
+    const completedLessons = await this.prisma.lessonProgress.count({
+      where: {
+        lesson: { courseId },
+        userId,
+        isCompleted: true,
+      },
+    });
+
+    if (completedLessons >= totalLessons) {
+      await this.prisma.courseAssignment.updateMany({
+        where: { courseId, userId },
+        data: { status: 'COMPLETED', completedAt: new Date() },
+      });
+    } else {
+      await this.prisma.courseAssignment.updateMany({
+        where: { courseId, userId, status: 'ASSIGNED' },
+        data: { status: 'IN_PROGRESS' },
+      });
+    }
   }
 }

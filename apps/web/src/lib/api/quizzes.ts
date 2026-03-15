@@ -3,6 +3,7 @@ import { apiClient } from './client';
 export interface Quiz {
   id: string;
   courseId: string;
+  lessonId: string | null;
   title: string;
   description: string | null;
   passingScore: number;
@@ -43,12 +44,27 @@ export interface CreateQuizData {
   }[];
 }
 
+export interface UpdateQuizData {
+  title?: string;
+  description?: string;
+  passingScore?: number;
+  questions?: {
+    text: string;
+    options: { text: string; isCorrect: boolean }[];
+  }[];
+}
+
 export function getQuizzes(courseId: string) {
   return apiClient.get<Quiz[]>(`/courses/${courseId}/quizzes`);
 }
 
-export function createQuiz(courseId: string, data: CreateQuizData) {
-  return apiClient.post<Quiz>(`/courses/${courseId}/quizzes`, data);
+export function createQuiz(courseId: string, data: CreateQuizData, lessonId?: string) {
+  const qs = lessonId ? `?lessonId=${lessonId}` : '';
+  return apiClient.post<Quiz>(`/courses/${courseId}/quizzes${qs}`, data);
+}
+
+export function updateQuiz(courseId: string, quizId: string, data: UpdateQuizData) {
+  return apiClient.patch<QuizDetail>(`/courses/${courseId}/quizzes/${quizId}`, data);
 }
 
 export function deleteQuiz(courseId: string, quizId: string) {
@@ -57,6 +73,10 @@ export function deleteQuiz(courseId: string, quizId: string) {
 
 export function getQuiz(courseId: string, quizId: string) {
   return apiClient.get<QuizDetail>(`/courses/${courseId}/quizzes/${quizId}`);
+}
+
+export function getQuizByLesson(courseId: string, lessonId: string) {
+  return apiClient.get<QuizDetail | null>(`/courses/${courseId}/quizzes/by-lesson/${lessonId}`);
 }
 
 export function submitQuiz(courseId: string, quizId: string, answers: Record<string, string>) {

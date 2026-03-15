@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, ArrowRight, Video, Headphones, FileText, Type, Pencil,
+  ClipboardList, Plus, CheckCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +13,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { FadeIn } from '@/components/animations/fade-in';
 import { getLesson, getLessons, type Lesson } from '@/lib/api/lessons';
+import { getQuizByLesson, type QuizDetail } from '@/lib/api/quizzes';
 import { LessonFormDialog } from '@/features/admin/lesson-form-dialog';
 import { LessonContentViewer } from '@/features/shared/lesson-content-viewer';
 import { CommentSection } from '@/features/shared/comment-section';
+import { QuizFormDialog } from '@/features/admin/quiz-form-dialog';
 
 export default function AdminLessonViewPage() {
   const params = useParams<{ courseId: string; lessonId: string }>();
@@ -26,12 +29,20 @@ export default function AdminLessonViewPage() {
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
 
+  const [quiz, setQuiz] = useState<QuizDetail | null>(null);
+  const [quizFormOpen, setQuizFormOpen] = useState(false);
+
   function fetchData() {
     setLoading(true);
-    Promise.all([getLesson(courseId, lessonId), getLessons(courseId)])
-      .then(([l, all]) => {
+    Promise.all([
+      getLesson(courseId, lessonId),
+      getLessons(courseId),
+      getQuizByLesson(courseId, lessonId),
+    ])
+      .then(([l, all, q]) => {
         setLesson(l);
         setAllLessons(all.sort((a, b) => a.sortOrder - b.sortOrder));
+        setQuiz(q);
       })
       .catch(() => toast.error('Failed to load lesson'))
       .finally(() => setLoading(false));
@@ -121,6 +132,65 @@ export default function AdminLessonViewPage() {
         />
       </FadeIn>
 
+      {/* Quiz Section */}
+      <FadeIn delay={150} duration={500}>
+        <div className="border rounded-lg p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="size-4 text-muted-foreground" />
+              <h2 className="font-semibold text-sm">Lesson Quiz</h2>
+            </div>
+            {quiz ? (
+              <Button variant="outline" size="sm" onClick={() => setQuizFormOpen(true)}>
+                <Pencil className="size-3.5 mr-1" />
+                Edit Quiz
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => setQuizFormOpen(true)}>
+                <Plus className="size-3.5 mr-1" />
+                Add Quiz
+              </Button>
+            )}
+          </div>
+
+          {quiz ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span>{quiz.title}</span>
+                <Badge variant="secondary">{quiz.passingScore}% to pass</Badge>
+                <span>{quiz.questionCount} question{quiz.questionCount !== 1 ? 's' : ''}</span>
+              </div>
+              {quiz.questions.map((q, qi) => (
+                <div key={q.id} className="rounded border p-3 space-y-2">
+                  <p className="text-sm font-medium">
+                    {qi + 1}. {q.text}
+                  </p>
+                  <div className="space-y-1 pl-4">
+                    {q.options.map((opt) => (
+                      <div
+                        key={opt.id}
+                        className={`text-sm flex items-center gap-2 rounded px-2 py-0.5 ${
+                          opt.isCorrect
+                            ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+                            : 'text-muted-foreground'
+                        }`}
+                      >
+                        {opt.isCorrect && <CheckCircle className="size-3.5 shrink-0" />}
+                        <span>{opt.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No quiz attached. Agents will use &quot;Mark as Complete&quot; for this lesson.
+            </p>
+          )}
+        </div>
+      </FadeIn>
+
       {/* Navigation between lessons */}
       <div className="flex items-center justify-between border-t pt-4">
         {prevLesson ? (
@@ -162,6 +232,16 @@ export default function AdminLessonViewPage() {
         lesson={lesson}
         open={editOpen}
         onOpenChange={setEditOpen}
+        onSuccess={fetchData}
+      />
+
+      {/* Quiz Form Dialog */}
+      <QuizFormDialog
+        courseId={courseId}
+        quiz={quiz}
+        lessonId={lessonId}
+        open={quizFormOpen}
+        onOpenChange={setQuizFormOpen}
         onSuccess={fetchData}
       />
     </div>

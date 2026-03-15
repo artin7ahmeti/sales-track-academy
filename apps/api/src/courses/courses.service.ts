@@ -94,6 +94,7 @@ export class CoursesService {
       quizzes: course.quizzes.map((q) => ({
         id: q.id,
         title: q.title,
+        lessonId: q.lessonId,
         passingScore: q.passingScore,
         questionCount: q._count.questions,
         sortOrder: q.sortOrder,
