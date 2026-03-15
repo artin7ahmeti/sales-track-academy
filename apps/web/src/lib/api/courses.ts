@@ -17,6 +17,8 @@ export interface Course {
 export interface CourseDetail extends Course {
   lessons: { id: string; title: string; type: string; sortOrder: number; durationSec: number | null }[];
   quizzes: { id: string; title: string; lessonId: string | null; passingScore: number; questionCount: number; sortOrder: number }[];
+  assignedUserIds: string[];
+  assignedGroupIds: string[];
 }
 
 export interface AgentCourse {
@@ -54,7 +56,7 @@ export function createCourse(data: { title: string; description?: string; thumbn
   return apiClient.post<Course>('/courses', data);
 }
 
-export function updateCourse(id: string, data: { title?: string; description?: string; isPublished?: boolean }) {
+export function updateCourse(id: string, data: { title?: string; description?: string; thumbnailUrl?: string; isPublished?: boolean }) {
   return apiClient.patch<Course>(`/courses/${id}`, data);
 }
 

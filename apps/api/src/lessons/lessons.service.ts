@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
@@ -57,6 +57,16 @@ export class LessonsService {
   }
 
   async reorder(courseId: string, lessonIds: string[]) {
+    const lessons = await this.prisma.lesson.findMany({
+      where: { courseId },
+      select: { id: true },
+    });
+    const validIds = new Set(lessons.map((l) => l.id));
+    const invalid = lessonIds.filter((id) => !validIds.has(id));
+    if (invalid.length > 0) {
+      throw new BadRequestException('Some lesson IDs do not belong to this course');
+    }
+
     await this.prisma.$transaction(
       lessonIds.map((id, index) =>
         this.prisma.lesson.update({
@@ -73,7 +83,18 @@ export class LessonsService {
     progressPct: number,
     lastPosition?: number,
   ) {
-    await this.ensureExists(lessonId);
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      select: { id: true, courseId: true },
+    });
+    if (!lesson) throw new NotFoundException('Lesson not found');
+
+    const assignment = await this.prisma.courseAssignment.findFirst({
+      where: { courseId: lesson.courseId, userId },
+    });
+    if (!assignment) {
+      throw new ForbiddenException('You are not assigned to this course');
+    }
 
     const isCompleted = progressPct >= 100;
     const completedAt = isCompleted ? new Date() : undefined;
@@ -98,13 +119,7 @@ export class LessonsService {
 
     // Check if all lessons in the course are completed to update assignment status
     if (isCompleted) {
-      const lesson = await this.prisma.lesson.findUnique({
-        where: { id: lessonId },
-        select: { courseId: true },
-      });
-      if (lesson) {
-        await this.checkCourseCompletion(lesson.courseId, userId);
-      }
+      await this.checkCourseCompletion(lesson.courseId, userId);
     }
 
     return progress;

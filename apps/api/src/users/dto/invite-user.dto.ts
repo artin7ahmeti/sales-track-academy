@@ -1,23 +1,4 @@
-import { IsEmail, IsEnum, IsOptional, IsArray, IsString } from 'class-validator';
-import { Role } from '@salestrack/contracts';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
+import { InviteUserSchema } from '@salestrack/contracts';
 
-export class InviteUserDto {
-  @ApiProperty({ example: 'new.agent@salestrack.com' })
-  @IsEmail()
-  email!: string;
-
-  @ApiProperty({ enum: Role, example: Role.AGENT })
-  @IsEnum(Role)
-  role!: Role;
-
-  @ApiPropertyOptional({
-    type: [String],
-    example: ['grp_123', 'grp_456'],
-    description: 'Optional group ids reserved for future invite assignment support.',
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  groupIds?: string[];
-}
+export class InviteUserDto extends createZodDto(InviteUserSchema) {}

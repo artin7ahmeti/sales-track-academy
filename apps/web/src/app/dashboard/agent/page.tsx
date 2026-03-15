@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { BookOpen, CheckCircle, Clock, Trophy, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,28 @@ import { FadeIn, StaggerChildren } from '@/components/animations/fade-in';
 import { useAuth } from '@/features/auth/auth-provider';
 import { getMyProgress, type AgentProgress } from '@/lib/api/analytics';
 import { getMyCourses, type AgentCourse } from '@/lib/api/courses';
+import { useThumbnailUrl } from '@/hooks/use-thumbnail-url';
+
+function SmallThumbnail({ thumbnailKey }: { thumbnailKey: string | null }) {
+  const url = useThumbnailUrl(thumbnailKey);
+  if (!url) {
+    return (
+      <div className="flex items-center justify-center size-11 rounded-lg bg-muted shrink-0">
+        <BookOpen className="size-4.5 text-muted-foreground/30" />
+      </div>
+    );
+  }
+  return (
+    <Image
+      src={url}
+      alt=""
+      width={44}
+      height={44}
+      className="size-11 rounded-lg object-cover shrink-0"
+      unoptimized
+    />
+  );
+}
 
 type AccentColor = 'blue' | 'green' | 'amber' | 'purple';
 
@@ -136,15 +159,16 @@ export default function AgentDashboard() {
                   <Link
                     key={course.id}
                     href={`/dashboard/agent/courses/${course.id}`}
-                    className="flex items-center justify-between rounded-lg border p-3.5 hover:bg-muted/50 hover:border-primary/20 transition-all duration-200 group"
+                    className="flex items-center gap-3.5 rounded-lg border p-3 hover:bg-muted/50 hover:border-primary/20 transition-all duration-200 group"
                   >
+                    <SmallThumbnail thumbnailKey={course.thumbnailUrl} />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">{course.title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {course.completedLessons}/{course.lessonCount} lessons
                       </p>
                     </div>
-                    <div className="flex items-center gap-3 ml-4">
+                    <div className="flex items-center gap-3 ml-auto shrink-0">
                       <Progress value={course.progressPct} className="h-1.5 w-20" />
                       <span className="text-xs text-muted-foreground w-8 text-right tabular-nums">
                         {course.progressPct}%

@@ -29,7 +29,11 @@ export class CoursesService {
         orderBy: { createdAt: 'desc' },
         include: {
           _count: {
-            select: { lessons: true, quizzes: true, assignments: true },
+            select: { lessons: true, quizzes: true },
+          },
+          assignments: {
+            where: { userId: { not: null } },
+            select: { userId: true },
           },
         },
       }),
@@ -45,7 +49,7 @@ export class CoursesService {
         isPublished: c.isPublished,
         lessonCount: c._count.lessons,
         quizCount: c._count.quizzes,
-        assignmentCount: c._count.assignments,
+        assignmentCount: new Set(c.assignments.map((a) => a.userId)).size,
         createdAt: c.createdAt,
         updatedAt: c.updatedAt,
       })),
@@ -62,7 +66,7 @@ export class CoursesService {
     const course = await this.prisma.course.findUnique({
       where: { id, deletedAt: null },
       include: {
-        _count: { select: { lessons: true, quizzes: true, assignments: true } },
+        _count: { select: { lessons: true, quizzes: true } },
         lessons: {
           orderBy: { sortOrder: 'asc' },
           select: {
@@ -73,6 +77,9 @@ export class CoursesService {
         quizzes: {
           orderBy: { sortOrder: 'asc' },
           include: { _count: { select: { questions: true } } },
+        },
+        assignments: {
+          select: { userId: true, groupId: true },
         },
       },
     });
@@ -87,7 +94,9 @@ export class CoursesService {
       isPublished: course.isPublished,
       lessonCount: course._count.lessons,
       quizCount: course._count.quizzes,
-      assignmentCount: course._count.assignments,
+      assignmentCount: new Set(
+        course.assignments.filter((a) => a.userId).map((a) => a.userId),
+      ).size,
       createdAt: course.createdAt,
       updatedAt: course.updatedAt,
       lessons: course.lessons,
@@ -99,6 +108,12 @@ export class CoursesService {
         questionCount: q._count.questions,
         sortOrder: q.sortOrder,
       })),
+      assignedUserIds: course.assignments
+        .map((a) => a.userId)
+        .filter((id): id is string => id !== null),
+      assignedGroupIds: course.assignments
+        .map((a) => a.groupId)
+        .filter((id): id is string => id !== null),
     };
   }
 

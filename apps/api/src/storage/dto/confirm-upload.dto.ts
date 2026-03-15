@@ -1,9 +1,4 @@
-import { IsString, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
+import { ConfirmUploadSchema } from '@salestrack/contracts';
 
-export class ConfirmUploadDto {
-  @ApiProperty({ example: 'uploads/courses/crs_123/course-thumbnail.png' })
-  @IsString()
-  @MinLength(1)
-  key!: string;
-}
+export class ConfirmUploadDto extends createZodDto(ConfirmUploadSchema) {}

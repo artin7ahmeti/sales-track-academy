@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { BookOpen, ArrowRight, Calendar } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,32 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FadeIn } from '@/components/animations/fade-in';
 import { getMyCourses, type AgentCourse } from '@/lib/api/courses';
+import { useThumbnailUrl } from '@/hooks/use-thumbnail-url';
+
+function CardThumbnail({ thumbnailKey }: { thumbnailKey: string | null }) {
+  const url = useThumbnailUrl(thumbnailKey);
+
+  if (!url) {
+    return (
+      <div className="relative w-full aspect-[16/9] bg-muted rounded-t-xl flex items-center justify-center">
+        <BookOpen className="size-10 text-muted-foreground/20" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full aspect-[16/9] rounded-t-xl overflow-hidden">
+      <Image
+        src={url}
+        alt=""
+        fill
+        className="object-cover transition-transform duration-300 group-hover:scale-105"
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        unoptimized
+      />
+    </div>
+  );
+}
 
 function CourseCard({ course, index }: { course: AgentCourse; index: number }) {
   const statusLabel =
@@ -23,11 +50,14 @@ function CourseCard({ course, index }: { course: AgentCourse; index: number }) {
   return (
     <FadeIn delay={index * 60} duration={400}>
       <Link href={`/dashboard/agent/courses/${course.id}`}>
-        <Card className="hover:bg-muted/30 hover:border-primary/20 hover:shadow-md transition-all duration-200 h-full group">
-          <CardContent className="pt-5 flex flex-col h-full">
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <h3 className="font-semibold text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">{course.title}</h3>
-              <Badge variant={statusVariant} className="shrink-0">{statusLabel}</Badge>
+        <Card className="hover:border-primary/20 hover:shadow-md transition-all duration-200 h-full group overflow-hidden">
+          <CardThumbnail thumbnailKey={course.thumbnailUrl} />
+          <CardContent className="pt-4 pb-5 flex flex-col">
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+              <h3 className="font-semibold text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                {course.title}
+              </h3>
+              <Badge variant={statusVariant} className="shrink-0 text-[11px]">{statusLabel}</Badge>
             </div>
             {course.description && (
               <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{course.description}</p>
@@ -35,15 +65,17 @@ function CourseCard({ course, index }: { course: AgentCourse; index: number }) {
             <div className="mt-auto space-y-2">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>{course.completedLessons}/{course.lessonCount} lessons</span>
-                <span className="tabular-nums">{course.progressPct}%</span>
+                <span className="tabular-nums font-medium">{course.progressPct}%</span>
               </div>
               <Progress value={course.progressPct} className="h-1.5" />
               <div className="flex items-center justify-between">
-                {course.dueDate && (
+                {course.dueDate ? (
                   <span className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Calendar className="size-3" />
                     Due {new Date(course.dueDate).toLocaleDateString()}
                   </span>
+                ) : (
+                  <span />
                 )}
                 <Button variant="ghost" size="xs" className="ml-auto text-xs">
                   {course.status === 'ASSIGNED' ? 'Start' : course.status === 'COMPLETED' ? 'Review' : 'Continue'}
@@ -86,7 +118,7 @@ export default function AgentCoursesPage() {
         <div><Skeleton className="h-8 w-40" /><Skeleton className="h-4 w-64 mt-2" /></div>
         <Skeleton className="h-8 w-80" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48" />)}
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-64" />)}
         </div>
       </div>
     );

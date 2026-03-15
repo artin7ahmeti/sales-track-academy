@@ -1,16 +1,18 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   BookOpen, Plus, Search, MoreHorizontal,
-  Pencil, Trash2, Eye, EyeOff,
+  Pencil, Trash2, Eye, EyeOff, Upload, X, ImageIcon,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import {
   Table, TableBody, TableCell, TableHead,
   TableHeader, TableRow,
@@ -31,6 +33,32 @@ import {
   getCourses, createCourse, updateCourse, deleteCourse,
   type Course,
 } from '@/lib/api/courses';
+import { getUploadUrl, confirmUpload } from '@/lib/api/storage';
+import { useThumbnailUrl } from '@/hooks/use-thumbnail-url';
+
+const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024; // 5 MB
+const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/png,image/webp';
+
+function CourseThumbnail({ thumbnailKey }: { thumbnailKey: string | null }) {
+  const url = useThumbnailUrl(thumbnailKey);
+  if (!url) {
+    return (
+      <div className="flex items-center justify-center size-10 rounded-lg bg-muted">
+        <BookOpen className="size-4 text-muted-foreground/50" />
+      </div>
+    );
+  }
+  return (
+    <Image
+      src={url}
+      alt=""
+      width={40}
+      height={40}
+      className="size-10 rounded-lg object-cover"
+      unoptimized
+    />
+  );
+}
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -42,6 +70,16 @@ export default function CoursesPage() {
   const [formDescription, setFormDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Course | null>(null);
+
+  // Thumbnail state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [existingThumbnailKey, setExistingThumbnailKey] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
+
+  const existingThumbnailUrl = useThumbnailUrl(existingThumbnailKey);
 
   const fetchCourses = useCallback(async () => {
     try {
@@ -62,6 +100,10 @@ export default function CoursesPage() {
     setEditingCourse(null);
     setFormTitle('');
     setFormDescription('');
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
+    setExistingThumbnailKey(null);
+    setUploadProgress(0);
     setDialogOpen(true);
   }
 
@@ -69,7 +111,83 @@ export default function CoursesPage() {
     setEditingCourse(course);
     setFormTitle(course.title);
     setFormDescription(course.description || '');
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
+    setExistingThumbnailKey(course.thumbnailUrl);
+    setUploadProgress(0);
     setDialogOpen(true);
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    processFile(selected);
+  }
+
+  function processFile(file: File) {
+    if (!file.type.match(/^image\/(jpeg|png|webp)$/)) {
+      toast.error('Only JPEG, PNG, and WebP images are accepted');
+      return;
+    }
+    if (file.size > MAX_THUMBNAIL_SIZE) {
+      toast.error('Image must be under 5 MB');
+      return;
+    }
+    setThumbnailFile(file);
+    setExistingThumbnailKey(null);
+    const reader = new FileReader();
+    reader.onload = (ev) => setThumbnailPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  }
+
+  function removeThumbnail() {
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
+    setExistingThumbnailKey(null);
+    setUploadProgress(0);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  async function uploadThumbnail(courseId: string): Promise<string | undefined> {
+    if (!thumbnailFile) return existingThumbnailKey || undefined;
+
+    setUploading(true);
+    try {
+      const { uploadUrl, key } = await getUploadUrl({
+        fileName: thumbnailFile.name,
+        contentType: thumbnailFile.type,
+        entityType: 'course-thumbnail',
+        entityId: courseId,
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.upload.addEventListener('progress', (ev) => {
+          if (ev.lengthComputable) {
+            setUploadProgress(Math.round((ev.loaded / ev.total) * 100));
+          }
+        });
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`Upload failed: ${xhr.status}`));
+        });
+        xhr.addEventListener('error', () => reject(new Error('Upload failed')));
+        xhr.open('PUT', uploadUrl);
+        xhr.setRequestHeader('Content-Type', thumbnailFile.type);
+        xhr.send(thumbnailFile);
+      });
+
+      await confirmUpload(key);
+      return key;
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleSubmit() {
@@ -77,16 +195,25 @@ export default function CoursesPage() {
     setSubmitting(true);
     try {
       if (editingCourse) {
+        const thumbnailUrl = await uploadThumbnail(editingCourse.id);
         await updateCourse(editingCourse.id, {
           title: formTitle,
           description: formDescription || undefined,
+          ...(thumbnailUrl !== undefined && { thumbnailUrl }),
         });
         toast.success('Course updated');
       } else {
-        await createCourse({
+        // Create course first, then upload thumbnail if present
+        const created = await createCourse({
           title: formTitle,
           description: formDescription || undefined,
         });
+        if (thumbnailFile && created.id) {
+          const thumbnailUrl = await uploadThumbnail(created.id);
+          if (thumbnailUrl) {
+            await updateCourse(created.id, { thumbnailUrl });
+          }
+        }
         toast.success('Course created');
       }
       setDialogOpen(false);
@@ -119,6 +246,8 @@ export default function CoursesPage() {
       toast.error('Failed to delete course');
     }
   }
+
+  const previewSrc = thumbnailPreview || existingThumbnailUrl;
 
   if (loading) {
     return (
@@ -202,7 +331,7 @@ export default function CoursesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
+                  <TableHead>Course</TableHead>
                   <TableHead className="text-center">Status</TableHead>
                   <TableHead className="text-center">Lessons</TableHead>
                   <TableHead className="text-center">Quizzes</TableHead>
@@ -214,13 +343,16 @@ export default function CoursesPage() {
                 {courses.map((course) => (
                   <TableRow key={course.id} className="group/row">
                     <TableCell>
-                      <Link href={`/dashboard/admin/courses/${course.id}`} className="block group">
-                        <span className="font-medium group-hover:text-primary transition-colors">{course.title}</span>
-                        {course.description && (
-                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                            {course.description}
-                          </p>
-                        )}
+                      <Link href={`/dashboard/admin/courses/${course.id}`} className="flex items-center gap-3 group">
+                        <CourseThumbnail thumbnailKey={course.thumbnailUrl} />
+                        <div className="min-w-0">
+                          <span className="font-medium group-hover:text-primary transition-colors">{course.title}</span>
+                          {course.description && (
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                              {course.description}
+                            </p>
+                          )}
+                        </div>
                       </Link>
                     </TableCell>
                     <TableCell className="text-center">
@@ -270,8 +402,9 @@ export default function CoursesPage() {
         )}
       </FadeIn>
 
+      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {editingCourse ? 'Edit Course' : 'Create Course'}
@@ -283,6 +416,66 @@ export default function CoursesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Thumbnail Upload */}
+            <div className="space-y-2">
+              <Label>Thumbnail</Label>
+              {previewSrc ? (
+                <div className="relative group rounded-xl overflow-hidden border bg-muted">
+                  <img
+                    src={previewSrc}
+                    alt="Thumbnail preview"
+                    className="w-full h-40 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="size-3.5 mr-1" />
+                      Replace
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={removeThumbnail}
+                    >
+                      <X className="size-3.5 mr-1" />
+                      Remove
+                    </Button>
+                  </div>
+                  {uploading && (
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/60">
+                      <Progress value={uploadProgress} className="h-1.5" />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDrop={handleDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                  className="flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed border-muted-foreground/25 bg-muted/30 hover:bg-muted/50 hover:border-muted-foreground/40 transition-colors cursor-pointer"
+                >
+                  <ImageIcon className="size-8 text-muted-foreground/40 mb-2" />
+                  <span className="text-sm text-muted-foreground">
+                    Click or drag an image to upload
+                  </span>
+                  <span className="text-xs text-muted-foreground/60 mt-0.5">
+                    JPEG, PNG, or WebP (max 5 MB)
+                  </span>
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_IMAGE_TYPES}
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="course-title">Title</Label>
               <Input
@@ -309,10 +502,10 @@ export default function CoursesPage() {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!formTitle.trim() || submitting}
+              disabled={!formTitle.trim() || submitting || uploading}
             >
               {submitting
-                ? 'Saving...'
+                ? (uploading ? 'Uploading...' : 'Saving...')
                 : editingCourse
                   ? 'Save Changes'
                   : 'Create'}
@@ -321,6 +514,7 @@ export default function CoursesPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation */}
       <Dialog
         open={!!deleteTarget}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}

@@ -1,14 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { BarChart3, BookOpen, Users, TrendingUp, Activity, Trophy } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import {
+  BarChart3, BookOpen, Users, TrendingUp, Activity, Trophy,
+  User, ArrowLeft, CheckCircle, Clock,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select, SelectTrigger, SelectValue,
+  SelectContent, SelectItem,
+} from '@/components/ui/select';
 import { FadeIn, StaggerChildren } from '@/components/animations/fade-in';
-import { getOrgAnalytics, type OrgAnalytics } from '@/lib/api/analytics';
+import { getOrgAnalytics, getAgentProgress, type OrgAnalytics, type AgentProgress } from '@/lib/api/analytics';
+import { getUsers, type User as UserType } from '@/lib/api/users';
 
 type AccentColor = 'blue' | 'green' | 'amber' | 'purple';
 
@@ -29,13 +40,170 @@ function StatCard({ title, value, subtitle, icon: Icon, accent }: {
   );
 }
 
+const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
+  COMPLETED: { label: 'Completed', variant: 'default' },
+  IN_PROGRESS: { label: 'In Progress', variant: 'secondary' },
+  ASSIGNED: { label: 'Not Started', variant: 'outline' },
+};
+
+function AgentDetailView({ agent, onBack }: { agent: AgentProgress; onBack: () => void }) {
+  return (
+    <div className="space-y-6">
+      <FadeIn duration={400}>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon-sm" onClick={onBack}>
+            <ArrowLeft className="size-4" />
+          </Button>
+          <div className="flex items-center gap-3 flex-1">
+            <div className="flex items-center justify-center size-10 rounded-full bg-primary/10">
+              <User className="size-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold tracking-tight">{agent.userName}</h2>
+              <p className="text-sm text-muted-foreground">Individual performance breakdown</p>
+            </div>
+          </div>
+        </div>
+      </FadeIn>
+
+      {/* Overall progress */}
+      <FadeIn delay={50}>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Overall Progress</span>
+              <span className="text-2xl font-bold tabular-nums">{agent.overallProgress}%</span>
+            </div>
+            <Progress value={agent.overallProgress} className="h-2" />
+          </CardContent>
+        </Card>
+      </FadeIn>
+
+      {/* Stat cards */}
+      <StaggerChildren staggerDelay={60} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { title: 'Assigned', value: agent.totalAssigned, subtitle: 'Total courses', icon: BookOpen, accent: 'blue' as AccentColor },
+          { title: 'Completed', value: agent.totalCompleted, subtitle: `of ${agent.totalAssigned} courses`, icon: CheckCircle, accent: 'green' as AccentColor },
+          { title: 'In Progress', value: agent.totalInProgress, subtitle: 'Currently active', icon: Clock, accent: 'amber' as AccentColor },
+          { title: 'Avg Quiz Score', value: `${agent.avgQuizScore}%`, subtitle: 'Across all quizzes', icon: Trophy, accent: 'purple' as AccentColor },
+        ].map((s) => (
+          <StatCard key={s.title} {...s} />
+        ))}
+      </StaggerChildren>
+
+      {/* Course breakdown */}
+      <FadeIn delay={200}>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader>
+            <CardTitle className="text-base">Course Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {agent.courses.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Course</TableHead>
+                    <TableHead>Progress</TableHead>
+                    <TableHead className="text-center">Lessons</TableHead>
+                    <TableHead>Quiz Scores</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {agent.courses.map((course) => {
+                    const status = statusConfig[course.status] ?? statusConfig.ASSIGNED!;
+                    return (
+                      <TableRow key={course.courseId}>
+                        <TableCell className="font-medium">{course.courseTitle}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 min-w-[120px]">
+                            <Progress value={course.progressPct} className="h-1.5 flex-1" />
+                            <span className="text-xs text-muted-foreground w-8 text-right tabular-nums">{course.progressPct}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center tabular-nums">
+                          {course.lessonsCompleted}/{course.totalLessons}
+                        </TableCell>
+                        <TableCell>
+                          {course.quizScores.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {course.quizScores.map((qs, i) => (
+                                <Badge
+                                  key={i}
+                                  variant={qs.passed ? 'default' : 'secondary'}
+                                  className="text-xs tabular-nums"
+                                  title={qs.quizTitle}
+                                >
+                                  {qs.quizTitle.length > 15
+                                    ? qs.quizTitle.slice(0, 15) + '...'
+                                    : qs.quizTitle}: {qs.score}%
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">No attempts</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={status.variant}>{status.label}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No courses assigned to this agent yet.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </FadeIn>
+    </div>
+  );
+}
+
 export default function AnalyticsPage() {
   const [data, setData] = useState<OrgAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Agent individual view
+  const [agents, setAgents] = useState<UserType[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState('');
+  const [agentData, setAgentData] = useState<AgentProgress | null>(null);
+  const [agentLoading, setAgentLoading] = useState(false);
+
   useEffect(() => {
-    getOrgAnalytics().then(setData).catch(() => {}).finally(() => setLoading(false));
+    async function load() {
+      const [orgResult, usersResult] = await Promise.allSettled([
+        getOrgAnalytics(),
+        getUsers({ role: 'AGENT', limit: 100 }),
+      ]);
+      if (orgResult.status === 'fulfilled') setData(orgResult.value);
+      if (usersResult.status === 'fulfilled') setAgents(usersResult.value.data);
+      setLoading(false);
+    }
+    load();
   }, []);
+
+  const loadAgentData = useCallback(async (agentId: string) => {
+    setAgentLoading(true);
+    try {
+      const progress = await getAgentProgress(agentId);
+      setAgentData(progress);
+    } catch {
+      setAgentData(null);
+    } finally {
+      setAgentLoading(false);
+    }
+  }, []);
+
+  function handleSelectAgent(value: string | null) {
+    if (!value) return;
+    setSelectedAgentId(value);
+    loadAgentData(value);
+  }
 
   if (loading) {
     return (
@@ -46,6 +214,27 @@ export default function AnalyticsPage() {
             <Card key={i}><CardContent className="pt-6"><Skeleton className="h-9 w-16 mb-2" /><Skeleton className="h-3 w-24" /></CardContent></Card>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  // Show agent detail view
+  if (selectedAgentId && agentData && !agentLoading) {
+    return (
+      <div className="space-y-8">
+        <FadeIn duration={500}>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Analytics Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Individual agent performance breakdown.</p>
+          </div>
+        </FadeIn>
+        <AgentDetailView
+          agent={agentData}
+          onBack={() => {
+            setSelectedAgentId('');
+            setAgentData(null);
+          }}
+        />
       </div>
     );
   }
@@ -71,7 +260,7 @@ export default function AnalyticsPage() {
       </StaggerChildren>
 
       <FadeIn delay={200}>
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-3">
           <Card className="group hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">Active Learners</CardTitle>
@@ -100,6 +289,35 @@ export default function AnalyticsPage() {
                   <Badge variant="secondary" className="tabular-nums">{item.value}</Badge>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+          <Card className="group hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">Agent Performance</CardTitle>
+              <User className="size-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <Select
+                value={selectedAgentId || undefined}
+                onValueChange={handleSelectAgent}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select an agent..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {agentLoading && (
+                <div className="mt-3 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

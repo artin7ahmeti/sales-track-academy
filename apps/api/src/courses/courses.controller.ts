@@ -9,7 +9,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
@@ -34,10 +33,6 @@ export class CoursesController {
   @Get()
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'List courses (admin)' })
-  @ApiQuery({ name: 'search', required: false })
-  @ApiQuery({ name: 'isPublished', required: false, type: Boolean })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({ description: 'Paginated course list.' })
   findAll(@Query() query: CourseListQueryDto) {
     return this.coursesService.findAll(query);

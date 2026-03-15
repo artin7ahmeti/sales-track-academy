@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
@@ -28,7 +28,7 @@ export class QuizzesService {
     }));
   }
 
-  async findByLesson(lessonId: string) {
+  async findByLesson(lessonId: string, includeCorrect = false) {
     const quiz = await this.prisma.quiz.findUnique({
       where: { lessonId },
       include: {
@@ -65,7 +65,7 @@ export class QuizzesService {
           id: o.id,
           text: o.text,
           sortOrder: o.sortOrder,
-          isCorrect: o.isCorrect,
+          ...(includeCorrect && { isCorrect: o.isCorrect }),
         })),
       })),
     };
@@ -117,6 +117,14 @@ export class QuizzesService {
 
   async create(courseId: string, dto: CreateQuizDto, lessonId?: string) {
     if (lessonId) {
+      const lesson = await this.prisma.lesson.findUnique({
+        where: { id: lessonId },
+        select: { courseId: true },
+      });
+      if (!lesson) throw new NotFoundException('Lesson not found');
+      if (lesson.courseId !== courseId) {
+        throw new BadRequestException('Lesson does not belong to this course');
+      }
       const existing = await this.prisma.quiz.findUnique({ where: { lessonId } });
       if (existing) {
         throw new BadRequestException('This lesson already has a quiz');
@@ -229,6 +237,13 @@ export class QuizzesService {
     });
 
     if (!quiz) throw new NotFoundException('Quiz not found');
+
+    const assignment = await this.prisma.courseAssignment.findFirst({
+      where: { courseId: quiz.courseId, userId },
+    });
+    if (!assignment) {
+      throw new ForbiddenException('You are not assigned to this course');
+    }
 
     const totalQuestions = quiz.questions.length;
     if (totalQuestions === 0) {

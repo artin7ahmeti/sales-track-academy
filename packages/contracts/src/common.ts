@@ -1,9 +1,13 @@
+import { z } from 'zod';
+
 // ─── Pagination ──────────────────────────────────────────
 
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
-}
+export const PaginationParamsSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export type PaginationParams = z.infer<typeof PaginationParamsSchema>;
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -15,10 +19,12 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export interface SortParams {
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
+export const SortParamsSchema = z.object({
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+export type SortParams = z.infer<typeof SortParamsSchema>;
 
 // ─── API Response Wrappers ───────────────────────────────
 

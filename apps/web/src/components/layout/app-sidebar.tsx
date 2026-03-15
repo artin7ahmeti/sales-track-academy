@@ -47,7 +47,7 @@ export function AppSidebar({ navigation }: AppSidebarProps) {
   return (
     <Sidebar className="sidebar-glow">
       <SidebarHeader className="border-b px-4 py-3">
-        <Link href="/" className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 select-none">
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
             <GraduationCap className="size-4.5 text-primary-foreground" />
           </div>
@@ -55,7 +55,7 @@ export function AppSidebar({ navigation }: AppSidebarProps) {
             <span className="text-sm font-semibold leading-tight">SalesTrack</span>
             <span className="text-[10px] text-muted-foreground leading-tight">Academy</span>
           </div>
-        </Link>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>

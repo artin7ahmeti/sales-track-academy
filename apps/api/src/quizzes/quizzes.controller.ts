@@ -43,8 +43,11 @@ export class QuizzesController {
   @ApiParam({ name: 'courseId', description: 'Course id' })
   @ApiParam({ name: 'lessonId', description: 'Lesson id' })
   @ApiOkResponse({ description: 'Quiz for the lesson, or null.' })
-  findByLesson(@Param('lessonId') lessonId: string) {
-    return this.quizzesService.findByLesson(lessonId);
+  findByLesson(
+    @Param('lessonId') lessonId: string,
+    @CurrentUser() user: { role: string },
+  ) {
+    return this.quizzesService.findByLesson(lessonId, user.role === 'ADMIN');
   }
 
   @Get(':id')
