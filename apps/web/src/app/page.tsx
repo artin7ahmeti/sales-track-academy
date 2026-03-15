@@ -169,9 +169,9 @@ export default function Home() {
 
       <main>
         {/* Hero Section */}
-        <section className="relative overflow-hidden pt-14">
+        <section className="relative box-border overflow-hidden pt-14 lg:flex lg:min-h-svh lg:items-center">
           <LightRaysBackground />
-          <div className="relative z-10 mx-auto max-w-6xl px-6 py-24 lg:py-32">
+          <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-16 lg:py-20 xl:py-24">
             <div className="lg:flex lg:items-center lg:gap-16">
               <div className="mx-auto max-w-xl text-center lg:mx-0 lg:w-1/2 lg:text-left">
                 <FadeIn delay={100} duration={700}>

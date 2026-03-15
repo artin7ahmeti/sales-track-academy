@@ -19,8 +19,9 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string) {
+    const normalizedEmail = this.normalizeEmail(email);
     const user = await this.prisma.user.findUnique({
-      where: { email, deletedAt: null },
+      where: { email: normalizedEmail, deletedAt: null },
     });
 
     if (!user || !user.isActive) {
@@ -92,8 +93,9 @@ export class AuthService {
   }
 
   async signup(email: string, name: string, password: string) {
+    const normalizedEmail = this.normalizeEmail(email);
     const existing = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existing && !existing.deletedAt) {
@@ -108,7 +110,7 @@ export class AuthService {
           data: { name, passwordHash, isActive: true, role: 'AGENT' as Role, deletedAt: null },
         })
       : await this.prisma.user.create({
-          data: { email, name, passwordHash, role: 'AGENT' as Role, isActive: true },
+          data: { email: normalizedEmail, name, passwordHash, role: 'AGENT' as Role, isActive: true },
         });
 
     return this.login(user);
@@ -219,5 +221,9 @@ export class AuthService {
     });
 
     return token;
+  }
+
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
   }
 }
