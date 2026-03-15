@@ -92,32 +92,48 @@ interface LessonContentViewerProps {
 }
 
 export function LessonContentViewer({ type, content }: LessonContentViewerProps) {
-  const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
-  const [resolving, setResolving] = useState(false);
+  const [signedUrlState, setSignedUrlState] = useState<{
+    requestKey: string | null;
+    url: string | null;
+  }>({
+    requestKey: null,
+    url: null,
+  });
 
   const s3Key = content.s3Key as string | undefined;
   const rawUrl = content.url as string | undefined;
   const text = (content.text || content.body) as string | undefined;
+  const inline = type === 'PDF';
+  const requestKey = s3Key ? `${type}:${s3Key}` : null;
 
   useEffect(() => {
-    if (!s3Key) {
-      setResolvedUrl(null);
-      return;
-    }
+    if (!s3Key || !requestKey) return;
 
-    setResolving(true);
-    const inline = type === 'PDF';
+    let cancelled = false;
     getDownloadUrl(s3Key, inline)
-      .then(({ url }) => setResolvedUrl(url))
-      .catch(() => setResolvedUrl(null))
-      .finally(() => setResolving(false));
-  }, [s3Key, type]);
+      .then(({ url }) => {
+        if (!cancelled) {
+          setSignedUrlState({ requestKey, url });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSignedUrlState({ requestKey, url: null });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [inline, requestKey, s3Key]);
+
+  const resolving = Boolean(requestKey) && signedUrlState.requestKey !== requestKey;
 
   if (resolving) {
     return <Skeleton className="h-96 w-full rounded-lg" />;
   }
 
-  const url = resolvedUrl || rawUrl;
+  const url = requestKey ? signedUrlState.url : rawUrl;
 
   if (type === 'TEXT' && text) return <TextViewer text={text} />;
   if (type === 'VIDEO' && url) return <VideoPlayer url={url} />;

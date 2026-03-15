@@ -5,12 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, BookOpen, Video, Headphones, FileText, Type,
-  CheckCircle, ClipboardList, Trophy, XCircle,
+  CheckCircle, ClipboardList, XCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCourse, type CourseDetail } from '@/lib/api/courses';
 import { getQuizzes, getAttempts, type Quiz } from '@/lib/api/quizzes';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { MessageSquare, Send, Pencil, Trash2, Reply, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -102,7 +102,7 @@ export function CommentSection({ lessonId }: { lessonId: string }) {
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  async function fetchComments() {
+  const fetchComments = useCallback(async () => {
     try {
       const data = await getComments(lessonId);
       setComments(data);
@@ -111,11 +111,11 @@ export function CommentSection({ lessonId }: { lessonId: string }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [lessonId]);
 
   useEffect(() => {
     fetchComments();
-  }, [lessonId]);
+  }, [fetchComments]);
 
   async function handleSubmit() {
     if (!body.trim()) return;

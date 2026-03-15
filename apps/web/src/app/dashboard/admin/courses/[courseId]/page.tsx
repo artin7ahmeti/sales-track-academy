@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, BookOpen, Plus, ChevronUp, ChevronDown,
-  Pencil, Trash2, Video, Headphones, FileText, Type,
+  Trash2, Video, Headphones, FileText, Type,
   ClipboardList, Users, Eye,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,7 +52,6 @@ export default function CourseDetailPage() {
 
   // Lesson form
   const [lessonFormOpen, setLessonFormOpen] = useState(false);
-  const [editingLesson, setEditingLesson] = useState<CourseDetail['lessons'][number] | null>(null);
 
   // Quiz form
   const [quizFormOpen, setQuizFormOpen] = useState(false);
@@ -80,7 +79,6 @@ export default function CourseDetailPage() {
   }, [fetchCourse]);
 
   function openAddLesson() {
-    setEditingLesson(null);
     setLessonFormOpen(true);
   }
 
