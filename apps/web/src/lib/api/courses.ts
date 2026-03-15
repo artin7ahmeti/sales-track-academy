@@ -56,7 +56,7 @@ export function createCourse(data: { title: string; description?: string; thumbn
   return apiClient.post<Course>('/courses', data);
 }
 
-export function updateCourse(id: string, data: { title?: string; description?: string; isPublished?: boolean }) {
+export function updateCourse(id: string, data: { title?: string; description?: string; thumbnailUrl?: string; isPublished?: boolean }) {
   return apiClient.patch<Course>(`/courses/${id}`, data);
 }
 
