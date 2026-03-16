@@ -38,6 +38,18 @@ export class LessonsController {
     return this.lessonsService.findByCourse(courseId);
   }
 
+  @Get('progress')
+  @Roles(Role.AGENT)
+  @ApiOperation({ summary: 'Get lesson progress for course (agent)' })
+  @ApiParam({ name: 'courseId', description: 'Course id' })
+  @ApiOkResponse({ description: 'Map of lessonId to progress.' })
+  getProgress(
+    @Param('courseId') courseId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.lessonsService.getProgressByCourse(courseId, user.id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get lesson by id' })
   @ApiParam({ name: 'courseId', description: 'Course id' })

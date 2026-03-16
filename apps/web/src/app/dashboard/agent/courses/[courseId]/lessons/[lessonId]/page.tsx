@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { getLesson, getLessons, updateProgress, type Lesson } from '@/lib/api/lessons';
+import { getLesson, getLessons, getLessonProgress, updateProgress, type Lesson } from '@/lib/api/lessons';
 import { getQuizByLesson, submitQuiz, getAttempts, type QuizDetail, type QuizResult } from '@/lib/api/quizzes';
 import { LessonContentViewer } from '@/features/shared/lesson-content-viewer';
 import { CommentSection } from '@/features/shared/comment-section';
@@ -34,6 +34,9 @@ export default function LessonViewerPage() {
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [attempts, setAttempts] = useState<{ id: string; score: number; passed: boolean; startedAt: string }[]>([]);
 
+  // Lesson progress for gating
+  const [lessonProgressMap, setLessonProgressMap] = useState<Record<string, { isCompleted: boolean; progressPct: number }>>({});
+
   useEffect(() => {
     progressSent.current = false;
     setQuizResult(null);
@@ -42,11 +45,13 @@ export default function LessonViewerPage() {
       getLesson(courseId, lessonId),
       getLessons(courseId),
       getQuizByLesson(courseId, lessonId),
+      getLessonProgress(courseId).catch(() => ({})),
     ])
-      .then(([l, all, q]) => {
+      .then(([l, all, q, progress]) => {
         setLesson(l);
         setAllLessons(all.sort((a, b) => a.sortOrder - b.sortOrder));
         setQuiz(q);
+        setLessonProgressMap(progress);
         if (q) {
           getAttempts(courseId, q.id).then(setAttempts).catch(() => {});
         }
@@ -61,6 +66,7 @@ export default function LessonViewerPage() {
     try {
       await updateProgress(courseId, lessonId, { progressPct: 100 });
       progressSent.current = true;
+      setLessonProgressMap((prev) => ({ ...prev, [lessonId]: { isCompleted: true, progressPct: 100 } }));
       toast.success('Lesson marked as complete');
     } catch {
       toast.error('Failed to update progress');
@@ -82,6 +88,7 @@ export default function LessonViewerPage() {
       setQuizResult(result);
       if (result.passed) {
         progressSent.current = true;
+        setLessonProgressMap((prev) => ({ ...prev, [lessonId]: { isCompleted: true, progressPct: 100 } }));
         toast.success(`Passed with ${result.score}%! Lesson complete.`);
       } else {
         toast.error(`Score: ${result.score}%. You need ${quiz.passingScore}% to pass.`);
@@ -128,6 +135,7 @@ export default function LessonViewerPage() {
   const TypeIcon = { VIDEO: Video, AUDIO: Headphones, PDF: FileText, TEXT: Type }[lesson.type] || Type;
 
   const hasPassed = attempts.some((a) => a.passed);
+  const currentLessonCompleted = lessonProgressMap[lessonId]?.isCompleted === true || progressSent.current;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -188,29 +196,32 @@ export default function LessonViewerPage() {
                 </span>
               </div>
 
-              {/* Show answers */}
+              {/* Show answers — correct answers only revealed on pass */}
               {quiz.questions.map((q, qi) => {
                 const userAnswer = quizResult.userAnswers[q.id];
                 const correctAnswer = quizResult.correctAnswers[q.id];
+                const hasCorrectData = !!correctAnswer;
                 return (
                   <div key={q.id} className="rounded border p-3 space-y-2">
                     <p className="text-sm font-medium">{qi + 1}. {q.text}</p>
                     <div className="space-y-1 pl-4">
                       {q.options.map((opt) => {
                         const isUserChoice = opt.id === userAnswer;
-                        const isCorrect = opt.id === correctAnswer;
+                        const isCorrect = hasCorrectData && opt.id === correctAnswer;
                         let className = 'text-sm flex items-center gap-2 rounded px-2 py-0.5 ';
                         if (isCorrect) {
                           className += 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400';
                         } else if (isUserChoice && !isCorrect) {
-                          className += 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400 line-through';
+                          className += hasCorrectData
+                            ? 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400 line-through'
+                            : 'bg-muted text-foreground';
                         } else {
                           className += 'text-muted-foreground';
                         }
                         return (
                           <div key={opt.id} className={className}>
                             {isCorrect && <CheckCircle className="size-3.5 shrink-0" />}
-                            {isUserChoice && !isCorrect && <XCircle className="size-3.5 shrink-0" />}
+                            {isUserChoice && !isCorrect && hasCorrectData && <XCircle className="size-3.5 shrink-0" />}
                             <span>{opt.text}</span>
                           </div>
                         );
@@ -294,9 +305,9 @@ export default function LessonViewerPage() {
       ) : (
         // No quiz — show mark as complete
         <div className="flex justify-center">
-          <Button onClick={markComplete} disabled={completing || progressSent.current}>
+          <Button onClick={markComplete} disabled={completing || currentLessonCompleted}>
             <CheckCircle className="size-4 mr-1" />
-            {progressSent.current ? 'Completed' : completing ? 'Marking...' : 'Mark as Complete'}
+            {currentLessonCompleted ? 'Completed' : completing ? 'Marking...' : 'Mark as Complete'}
           </Button>
         </div>
       )}
@@ -312,12 +323,19 @@ export default function LessonViewerPage() {
           </Link>
         ) : <div />}
         {nextLesson ? (
-          <Link href={`/dashboard/agent/courses/${courseId}/lessons/${nextLesson.id}`}>
-            <Button variant="outline" size="sm">
+          currentLessonCompleted ? (
+            <Link href={`/dashboard/agent/courses/${courseId}/lessons/${nextLesson.id}`}>
+              <Button variant="outline" size="sm">
+                Next
+                <ArrowRight className="size-4 ml-1" />
+              </Button>
+            </Link>
+          ) : (
+            <Button variant="outline" size="sm" disabled title={quiz ? 'Pass the quiz to continue' : 'Mark lesson as complete to continue'}>
               Next
               <ArrowRight className="size-4 ml-1" />
             </Button>
-          </Link>
+          )
         ) : (
           <Link href={`/dashboard/agent/courses/${courseId}`}>
             <Button size="sm">

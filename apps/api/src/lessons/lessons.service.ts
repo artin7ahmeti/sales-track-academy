@@ -92,6 +92,26 @@ export class LessonsService {
     );
   }
 
+  async getProgressByCourse(courseId: string, userId: string) {
+    const lessons = await this.prisma.lesson.findMany({
+      where: { courseId },
+      select: { id: true },
+    });
+
+    const progress = await this.prisma.lessonProgress.findMany({
+      where: {
+        userId,
+        lessonId: { in: lessons.map((l) => l.id) },
+      },
+    });
+
+    const map: Record<string, { isCompleted: boolean; progressPct: number }> = {};
+    for (const p of progress) {
+      map[p.lessonId] = { isCompleted: p.isCompleted, progressPct: p.progressPct };
+    }
+    return map;
+  }
+
   async updateProgress(
     lessonId: string,
     userId: string,

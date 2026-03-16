@@ -5,14 +5,15 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, BookOpen, Video, Headphones, FileText, Type,
-  CheckCircle, ClipboardList, XCircle,
+  CheckCircle, Lock, ClipboardList,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCourse, type CourseDetail } from '@/lib/api/courses';
-import { getQuizzes, getAttempts, type Quiz } from '@/lib/api/quizzes';
+import { getLessonProgress } from '@/lib/api/lessons';
+import { getQuizzes, type Quiz } from '@/lib/api/quizzes';
 import { toast } from 'sonner';
 
 const typeIcons: Record<string, React.ElementType> = {
@@ -35,32 +36,20 @@ export default function AgentCourseDetailPage() {
 
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [quizAttempts, setQuizAttempts] = useState<Record<string, { score: number; passed: boolean } | null>>({});
+  const [lessonProgressMap, setLessonProgressMap] = useState<Record<string, { isCompleted: boolean; progressPct: number }>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const [courseData, quizData] = await Promise.all([
+        const [courseData, quizData, progressData] = await Promise.all([
           getCourse(courseId),
           getQuizzes(courseId),
+          getLessonProgress(courseId).catch(() => ({})),
         ]);
         setCourse(courseData);
         setQuizzes(quizData);
-
-        // Fetch latest attempts for each quiz
-        const attempts: Record<string, { score: number; passed: boolean } | null> = {};
-        await Promise.all(
-          quizData.map(async (q) => {
-            try {
-              const att = await getAttempts(courseId, q.id);
-              attempts[q.id] = att.length > 0 ? att[att.length - 1]! : null;
-            } catch {
-              attempts[q.id] = null;
-            }
-          }),
-        );
-        setQuizAttempts(attempts);
+        setLessonProgressMap(progressData);
       } catch {
         toast.error('Failed to load course');
       } finally {
@@ -96,6 +85,27 @@ export default function AgentCourseDetailPage() {
 
   const sortedLessons = [...course.lessons].sort((a, b) => a.sortOrder - b.sortOrder);
 
+  // Build a map of lessonId → quiz for lessons that have linked quizzes
+  const lessonQuizMap = new Map<string, Quiz>();
+  for (const q of quizzes) {
+    if (q.lessonId) lessonQuizMap.set(q.lessonId, q);
+  }
+
+  // Determine which lessons are unlocked:
+  // - First lesson is always unlocked
+  // - Subsequent lessons require the previous lesson to be completed
+  //   (if it has a linked quiz, the quiz must be passed)
+  function isLessonUnlocked(idx: number): boolean {
+    if (idx === 0) return true;
+    const prevLesson = sortedLessons[idx - 1]!;
+    const prevProgress = lessonProgressMap[prevLesson.id];
+    return prevProgress?.isCompleted === true;
+  }
+
+  function isLessonCompleted(lessonId: string): boolean {
+    return lessonProgressMap[lessonId]?.isCompleted === true;
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -130,6 +140,29 @@ export default function AgentCourseDetailPage() {
             <div className="space-y-1">
               {sortedLessons.map((lesson, idx) => {
                 const Icon = typeIcons[lesson.type] || Type;
+                const unlocked = isLessonUnlocked(idx);
+                const completed = isLessonCompleted(lesson.id);
+                const linkedQuiz = lessonQuizMap.get(lesson.id);
+
+                if (!unlocked) {
+                  return (
+                    <div
+                      key={lesson.id}
+                      className="flex items-center gap-3 rounded-lg border px-3 py-2.5 opacity-50 cursor-not-allowed"
+                    >
+                      <span className="text-xs text-muted-foreground w-5 text-right">{idx + 1}</span>
+                      <div className="rounded bg-muted p-1.5">
+                        <Lock className="size-3.5 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{lesson.title}</p>
+                        <p className="text-xs text-muted-foreground">Complete previous lesson to unlock</p>
+                      </div>
+                      <Badge variant="outline" className="text-xs">Locked</Badge>
+                    </div>
+                  );
+                }
+
                 return (
                   <Link
                     key={lesson.id}
@@ -142,11 +175,26 @@ export default function AgentCourseDetailPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{lesson.title}</p>
-                      {lesson.durationSec && (
-                        <p className="text-xs text-muted-foreground">{formatDuration(lesson.durationSec)}</p>
-                      )}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {lesson.durationSec && <span>{formatDuration(lesson.durationSec)}</span>}
+                        {linkedQuiz && (
+                          <span className="flex items-center gap-0.5">
+                            <ClipboardList className="size-3" />
+                            Quiz
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <Badge variant="secondary" className="text-xs">{lesson.type}</Badge>
+                    {completed ? (
+                      <Badge variant="default" className="text-xs">
+                        <CheckCircle className="size-3 mr-0.5" />
+                        Complete
+                      </Badge>
+                    ) : linkedQuiz ? (
+                      <Badge variant="outline" className="text-xs">Quiz Required</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">{lesson.type}</Badge>
+                    )}
                   </Link>
                 );
               })}
@@ -154,54 +202,6 @@ export default function AgentCourseDetailPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Quizzes */}
-      {quizzes.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <ClipboardList className="size-4" />
-              Quizzes ({quizzes.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1">
-              {quizzes.map((quiz) => {
-                const attempt = quizAttempts[quiz.id];
-                return (
-                  <Link
-                    key={quiz.id}
-                    href={`/dashboard/agent/courses/${courseId}/quizzes/${quiz.id}`}
-                    className="flex items-center gap-3 rounded-lg border px-3 py-2.5 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="rounded bg-muted p-1.5">
-                      <ClipboardList className="size-3.5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{quiz.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {quiz.questionCount} questions &middot; Pass: {quiz.passingScore}%
-                      </p>
-                    </div>
-                    {attempt ? (
-                      <Badge variant={attempt.passed ? 'default' : 'destructive'}>
-                        {attempt.passed ? (
-                          <CheckCircle className="size-3 mr-0.5" />
-                        ) : (
-                          <XCircle className="size-3 mr-0.5" />
-                        )}
-                        {attempt.score}%
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">Not Attempted</Badge>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
