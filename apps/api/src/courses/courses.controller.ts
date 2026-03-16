@@ -20,6 +20,7 @@ import { Role } from '@salestrack/contracts';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { AssignCourseDto } from './dto/assign-course.dto';
+import { UnassignCourseDto } from './dto/unassign-course.dto';
 import { CourseListQueryDto } from './dto/course-list-query.dto';
 
 @Controller('courses')
@@ -88,5 +89,14 @@ export class CoursesController {
   @ApiOkResponse({ description: 'Assignment result.' })
   assign(@Param('id') id: string, @Body() dto: AssignCourseDto) {
     return this.coursesService.assign(id, dto);
+  }
+
+  @Delete(':id/assign')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Unassign users from course (admin)' })
+  @ApiParam({ name: 'id', description: 'Course id' })
+  @ApiOkResponse({ description: 'Unassignment result.' })
+  unassign(@Param('id') id: string, @Body() dto: UnassignCourseDto) {
+    return this.coursesService.unassign(id, dto);
   }
 }

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   ArrowLeft, BookOpen, Plus, ChevronUp, ChevronDown,
   Trash2, Video, Headphones, FileText, Type,
-  ClipboardList, Users, Eye, Pencil,
+  ClipboardList, Users, Eye, Pencil, UserMinus,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ import {
   DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { getCourse, type CourseDetail } from '@/lib/api/courses';
+import { getCourse, unassignCourse, type CourseDetail } from '@/lib/api/courses';
 import { deleteLesson, reorderLessons } from '@/lib/api/lessons';
 import { deleteQuiz, getQuiz, type QuizDetail } from '@/lib/api/quizzes';
 import { LessonFormDialog } from '@/features/admin/lesson-form-dialog';
@@ -63,6 +63,9 @@ export default function CourseDetailPage() {
   // Delete confirmations
   const [deleteLessonTarget, setDeleteLessonTarget] = useState<string | null>(null);
   const [deleteQuizTarget, setDeleteQuizTarget] = useState<{ id: string; title: string } | null>(null);
+
+  // Unassign confirmation
+  const [unassignTarget, setUnassignTarget] = useState<{ id: string; name: string } | null>(null);
 
   const fetchCourse = useCallback(async () => {
     try {
@@ -132,6 +135,18 @@ export default function CourseDetailPage() {
       fetchCourse();
     } catch {
       toast.error('Failed to delete quiz');
+    }
+  }
+
+  async function handleUnassignUser() {
+    if (!unassignTarget) return;
+    try {
+      await unassignCourse(courseId, { userIds: [unassignTarget.id] });
+      toast.success('User unassigned');
+      setUnassignTarget(null);
+      fetchCourse();
+    } catch {
+      toast.error('Failed to unassign user');
     }
   }
 
@@ -229,6 +244,7 @@ export default function CourseDetailPage() {
         <TabsList>
           <TabsTrigger value="lessons">Lessons ({course.lessons.length})</TabsTrigger>
           <TabsTrigger value="quizzes">Quizzes ({course.quizzes.length})</TabsTrigger>
+          <TabsTrigger value="assigned">Assigned ({course.assignedUsers.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="lessons" className="space-y-4">
@@ -404,6 +420,46 @@ export default function CourseDetailPage() {
             </Card>
           )}
         </TabsContent>
+
+        <TabsContent value="assigned" className="space-y-4">
+          {course.assignedUsers.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Users className="size-10 text-muted-foreground/50 mb-3" />
+                <p className="text-muted-foreground text-sm">No users assigned yet.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead className="w-24" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {course.assignedUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name || '-'}</TableCell>
+                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => setUnassignTarget({ id: user.id, name: user.name || user.email })}
+                        >
+                          <UserMinus className="size-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* Lesson Form Dialog */}
@@ -474,6 +530,29 @@ export default function CourseDetailPage() {
             </Button>
             <Button variant="destructive" onClick={handleDeleteQuiz}>
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unassign User Confirmation */}
+      <Dialog
+        open={!!unassignTarget}
+        onOpenChange={(open) => { if (!open) setUnassignTarget(null); }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove Assignment</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to unassign &quot;{unassignTarget?.name}&quot; from this course?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUnassignTarget(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleUnassignUser}>
+              Unassign
             </Button>
           </DialogFooter>
         </DialogContent>

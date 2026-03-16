@@ -14,11 +14,24 @@ export interface Course {
   updatedAt: string;
 }
 
+export interface AssignedUser {
+  id: string;
+  name: string | null;
+  email: string;
+}
+
+export interface AssignedGroup {
+  id: string;
+  name: string;
+}
+
 export interface CourseDetail extends Course {
   lessons: { id: string; title: string; type: string; sortOrder: number; durationSec: number | null }[];
   quizzes: { id: string; title: string; lessonId: string | null; passingScore: number; questionCount: number; sortOrder: number }[];
   assignedUserIds: string[];
   assignedGroupIds: string[];
+  assignedUsers: AssignedUser[];
+  assignedGroupDetails: AssignedGroup[];
 }
 
 export interface AgentCourse {
@@ -66,4 +79,8 @@ export function deleteCourse(id: string) {
 
 export function assignCourse(id: string, data: { userIds?: string[]; groupIds?: string[]; dueDate?: string }) {
   return apiClient.post(`/courses/${id}/assign`, data);
+}
+
+export function unassignCourse(id: string, data: { userIds: string[] }) {
+  return apiClient.delete(`/courses/${id}/assign`, data);
 }

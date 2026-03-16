@@ -28,6 +28,12 @@ export const AssignCourseSchema = z.object({
 
 export type AssignCourseRequest = z.infer<typeof AssignCourseSchema>;
 
+export const UnassignCourseSchema = z.object({
+  userIds: z.array(z.string()).min(1),
+});
+
+export type UnassignCourseRequest = z.infer<typeof UnassignCourseSchema>;
+
 export const CourseListQuerySchema = PaginationParamsSchema.extend({
   search: z.string().optional(),
   isPublished: z.coerce.boolean().optional(),

@@ -5,6 +5,7 @@ import { MailService } from '../mail/mail.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { AssignCourseDto } from './dto/assign-course.dto';
+import { UnassignCourseDto } from './dto/unassign-course.dto';
 import { CourseListQueryDto } from './dto/course-list-query.dto';
 import type { Prisma } from '@salestrack/database';
 
@@ -87,7 +88,12 @@ export class CoursesService {
           include: { _count: { select: { questions: true } } },
         },
         assignments: {
-          select: { userId: true, groupId: true },
+          select: {
+            userId: true,
+            groupId: true,
+            user: { select: { id: true, name: true, email: true } },
+            group: { select: { id: true, name: true } },
+          },
         },
       },
     });
@@ -122,6 +128,14 @@ export class CoursesService {
       assignedGroupIds: course.assignments
         .map((a) => a.groupId)
         .filter((id): id is string => id !== null),
+      assignedUsers: course.assignments
+        .filter((a) => a.user)
+        .map((a) => a.user!)
+        .filter((u, i, arr) => arr.findIndex((x) => x.id === u.id) === i),
+      assignedGroupDetails: course.assignments
+        .filter((a) => a.group)
+        .map((a) => a.group!)
+        .filter((g, i, arr) => arr.findIndex((x) => x.id === g.id) === i),
     };
   }
 
@@ -285,6 +299,19 @@ export class CoursesService {
         ),
       ),
     );
+  }
+
+  async unassign(id: string, dto: UnassignCourseDto) {
+    await this.ensureExists(id);
+
+    await this.prisma.courseAssignment.deleteMany({
+      where: {
+        courseId: id,
+        userId: { in: dto.userIds },
+      },
+    });
+
+    return { message: 'Users unassigned successfully' };
   }
 
   private extractS3Key(content: unknown): string | null {
