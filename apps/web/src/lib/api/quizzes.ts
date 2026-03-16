@@ -48,6 +48,7 @@ export interface UpdateQuizData {
   title?: string;
   description?: string;
   passingScore?: number;
+  lessonId?: string | null;
   questions?: {
     text: string;
     options: { text: string; isCorrect: boolean }[];

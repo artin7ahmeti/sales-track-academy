@@ -12,6 +12,11 @@ import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createQuiz, updateQuiz, type CreateQuizData, type QuizDetail } from '@/lib/api/quizzes';
 
+interface CourseLessonOption {
+  id: string;
+  title: string;
+}
+
 interface QuizFormDialogProps {
   courseId: string;
   open: boolean;
@@ -19,6 +24,8 @@ interface QuizFormDialogProps {
   onSuccess: () => void;
   quiz?: QuizDetail | null;
   lessonId?: string;
+  lessons?: CourseLessonOption[];
+  linkedLessonIds?: string[];
 }
 
 interface QuestionDraft {
@@ -39,26 +46,35 @@ function quizToQuestions(quiz: QuizDetail): QuestionDraft[] {
 
 export function QuizFormDialog({
   courseId, open, onOpenChange, onSuccess, quiz, lessonId,
+  lessons = [], linkedLessonIds = [],
 }: QuizFormDialogProps) {
   const isEditing = !!quiz;
   const [title, setTitle] = useState('');
   const [passingScore, setPassingScore] = useState('70');
+  const [selectedLessonId, setSelectedLessonId] = useState<string>('');
   const [questions, setQuestions] = useState<QuestionDraft[]>([emptyQuestion()]);
   const [submitting, setSubmitting] = useState(false);
+
+  // Lessons available for linking: exclude those already linked (unless it's the lesson this quiz is already linked to)
+  const availableLessons = lessons.filter(
+    (l) => !linkedLessonIds.includes(l.id) || (quiz && quiz.lessonId === l.id),
+  );
 
   useEffect(() => {
     if (open) {
       if (quiz) {
         setTitle(quiz.title);
         setPassingScore(String(quiz.passingScore));
+        setSelectedLessonId(quiz.lessonId || '');
         setQuestions(quizToQuestions(quiz));
       } else {
         setTitle('');
         setPassingScore('70');
+        setSelectedLessonId(lessonId || '');
         setQuestions([emptyQuestion()]);
       }
     }
-  }, [open, quiz]);
+  }, [open, quiz, lessonId]);
 
   function updateQuestion(qi: number, field: string, value: string) {
     setQuestions((prev) =>
@@ -126,6 +142,7 @@ export function QuizFormDialog({
         await updateQuiz(courseId, quiz.id, {
           title,
           passingScore: parseInt(passingScore),
+          lessonId: selectedLessonId || null,
           questions: questions.map((q) => ({
             text: q.text,
             options: q.options.map((o) => ({
@@ -149,7 +166,7 @@ export function QuizFormDialog({
             })),
           })),
         };
-        await createQuiz(courseId, data, lessonId);
+        await createQuiz(courseId, data, selectedLessonId || undefined);
         toast.success('Quiz created');
       }
       onOpenChange(false);
@@ -171,15 +188,33 @@ export function QuizFormDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="quiz-title">Title</Label>
+            <Input
+              id="quiz-title"
+              placeholder="e.g. Module 1 Assessment"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="quiz-title">Title</Label>
-              <Input
-                id="quiz-title"
-                placeholder="e.g. Module 1 Assessment"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
+              <Label htmlFor="quiz-lesson">Linked Lesson</Label>
+              <select
+                id="quiz-lesson"
+                value={selectedLessonId}
+                onChange={(e) => setSelectedLessonId(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">No linked lesson</option>
+                {availableLessons.map((l) => (
+                  <option key={l.id} value={l.id}>{l.title}</option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Agents must pass this quiz to complete the linked lesson.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="quiz-score">Passing Score (%)</Label>

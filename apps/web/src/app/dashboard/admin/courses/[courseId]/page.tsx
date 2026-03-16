@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   ArrowLeft, BookOpen, Plus, ChevronUp, ChevronDown,
   Trash2, Video, Headphones, FileText, Type,
-  ClipboardList, Users, Eye,
+  ClipboardList, Users, Eye, Pencil,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ import {
 import { toast } from 'sonner';
 import { getCourse, type CourseDetail } from '@/lib/api/courses';
 import { deleteLesson, reorderLessons } from '@/lib/api/lessons';
-import { deleteQuiz } from '@/lib/api/quizzes';
+import { deleteQuiz, getQuiz, type QuizDetail } from '@/lib/api/quizzes';
 import { LessonFormDialog } from '@/features/admin/lesson-form-dialog';
 import { QuizFormDialog } from '@/features/admin/quiz-form-dialog';
 import { AssignCourseDialog } from '@/features/admin/assign-course-dialog';
@@ -55,6 +55,7 @@ export default function CourseDetailPage() {
 
   // Quiz form
   const [quizFormOpen, setQuizFormOpen] = useState(false);
+  const [editingQuiz, setEditingQuiz] = useState<QuizDetail | null>(null);
 
   // Assign dialog
   const [assignOpen, setAssignOpen] = useState(false);
@@ -97,6 +98,16 @@ export default function CourseDetailPage() {
       fetchCourse();
     } catch {
       toast.error('Failed to reorder lessons');
+    }
+  }
+
+  async function handleEditQuiz(quizId: string) {
+    try {
+      const detail = await getQuiz(courseId, quizId);
+      setEditingQuiz(detail);
+      setQuizFormOpen(true);
+    } catch {
+      toast.error('Failed to load quiz');
     }
   }
 
@@ -318,7 +329,7 @@ export default function CourseDetailPage() {
 
         <TabsContent value="quizzes" className="space-y-4">
           <div className="flex justify-end">
-            <Button onClick={() => setQuizFormOpen(true)}>
+            <Button onClick={() => { setEditingQuiz(null); setQuizFormOpen(true); }}>
               <Plus className="size-4 mr-1" />
               Add Quiz
             </Button>
@@ -340,7 +351,7 @@ export default function CourseDetailPage() {
                     <TableHead>Linked Lesson</TableHead>
                     <TableHead className="text-center">Questions</TableHead>
                     <TableHead className="text-center">Passing Score</TableHead>
-                    <TableHead className="w-12" />
+                    <TableHead className="w-24" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -368,13 +379,22 @@ export default function CourseDetailPage() {
                         <Badge variant="secondary">{quiz.passingScore}%</Badge>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => setDeleteQuizTarget({ id: quiz.id, title: quiz.title })}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={() => handleEditQuiz(quiz.id)}
+                          >
+                            <Pencil className="size-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={() => setDeleteQuizTarget({ id: quiz.id, title: quiz.title })}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                     );
@@ -398,8 +418,11 @@ export default function CourseDetailPage() {
       <QuizFormDialog
         courseId={courseId}
         open={quizFormOpen}
-        onOpenChange={setQuizFormOpen}
+        onOpenChange={(open) => { setQuizFormOpen(open); if (!open) setEditingQuiz(null); }}
         onSuccess={fetchCourse}
+        quiz={editingQuiz}
+        lessons={course.lessons.map((l) => ({ id: l.id, title: l.title }))}
+        linkedLessonIds={course.quizzes.filter((q) => q.lessonId).map((q) => q.lessonId!)}
       />
 
       {/* Assign Dialog */}

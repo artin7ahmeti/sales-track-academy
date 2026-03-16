@@ -83,8 +83,12 @@ export class QuizzesController {
   @ApiParam({ name: 'courseId', description: 'Course id' })
   @ApiParam({ name: 'id', description: 'Quiz id' })
   @ApiOkResponse({ description: 'Updated quiz.' })
-  update(@Param('id') id: string, @Body() dto: UpdateQuizDto) {
-    return this.quizzesService.update(id, dto);
+  update(
+    @Param('courseId') courseId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateQuizDto,
+  ) {
+    return this.quizzesService.update(id, courseId, dto);
   }
 
   @Delete(':id')

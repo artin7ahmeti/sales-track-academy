@@ -26,6 +26,7 @@ export const UpdateQuizSchema = z.object({
   title: z.string().min(1).optional(),
   description: z.string().optional(),
   passingScore: z.number().int().min(1).max(100).optional(),
+  lessonId: z.string().nullable().optional(),
   questions: z.array(CreateQuestionSchema).min(1).optional(),
 });
 

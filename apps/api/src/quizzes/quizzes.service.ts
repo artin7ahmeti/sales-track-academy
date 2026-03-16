@@ -164,9 +164,29 @@ export class QuizzesService {
     });
   }
 
-  async update(id: string, dto: UpdateQuizDto) {
+  async update(id: string, courseId: string, dto: UpdateQuizDto) {
     const quiz = await this.prisma.quiz.findUnique({ where: { id } });
     if (!quiz) throw new NotFoundException('Quiz not found');
+
+    // Validate lessonId change
+    if (dto.lessonId !== undefined) {
+      const newLessonId = dto.lessonId;
+      if (newLessonId !== null) {
+        const lesson = await this.prisma.lesson.findUnique({
+          where: { id: newLessonId },
+          select: { courseId: true },
+        });
+        if (!lesson) throw new NotFoundException('Lesson not found');
+        if (lesson.courseId !== courseId) {
+          throw new BadRequestException('Lesson does not belong to this course');
+        }
+        // Check no other quiz is already linked to this lesson
+        const existing = await this.prisma.quiz.findUnique({ where: { lessonId: newLessonId } });
+        if (existing && existing.id !== id) {
+          throw new BadRequestException('This lesson already has a quiz');
+        }
+      }
+    }
 
     return this.prisma.$transaction(async (tx) => {
       if (dto.questions) {
@@ -200,6 +220,7 @@ export class QuizzesService {
           ...(dto.title !== undefined && { title: dto.title }),
           ...(dto.description !== undefined && { description: dto.description }),
           ...(dto.passingScore !== undefined && { passingScore: dto.passingScore }),
+          ...(dto.lessonId !== undefined && { lessonId: dto.lessonId }),
         },
         include: {
           _count: { select: { questions: true } },
@@ -305,7 +326,7 @@ export class QuizzesService {
       passed: attempt.passed,
       startedAt: attempt.startedAt,
       completedAt: attempt.completedAt,
-      correctAnswers,
+      correctAnswers: passed ? correctAnswers : {},
       userAnswers: answers,
     };
   }

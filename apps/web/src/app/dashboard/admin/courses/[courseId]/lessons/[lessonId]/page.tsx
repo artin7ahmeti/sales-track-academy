@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, ArrowRight, Video, Headphones, FileText, Type, Pencil,
-  ClipboardList, Plus, CheckCircle,
+  ClipboardList, Plus, CheckCircle, Link2, Unlink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { FadeIn } from '@/components/animations/fade-in';
 import { getLesson, getLessons, type Lesson } from '@/lib/api/lessons';
-import { getQuizByLesson, type QuizDetail } from '@/lib/api/quizzes';
+import { getQuizByLesson, getQuizzes, updateQuiz, type Quiz, type QuizDetail } from '@/lib/api/quizzes';
 import { LessonFormDialog } from '@/features/admin/lesson-form-dialog';
 import { LessonContentViewer } from '@/features/shared/lesson-content-viewer';
 import { CommentSection } from '@/features/shared/comment-section';
@@ -32,20 +32,59 @@ export default function AdminLessonViewPage() {
   const [quiz, setQuiz] = useState<QuizDetail | null>(null);
   const [quizFormOpen, setQuizFormOpen] = useState(false);
 
+  // All course quizzes (for assigning unlinked ones)
+  const [courseQuizzes, setCourseQuizzes] = useState<Quiz[]>([]);
+  const [selectedQuizId, setSelectedQuizId] = useState('');
+  const [linking, setLinking] = useState(false);
+
   function fetchData() {
     setLoading(true);
     Promise.all([
       getLesson(courseId, lessonId),
       getLessons(courseId),
       getQuizByLesson(courseId, lessonId),
+      getQuizzes(courseId),
     ])
-      .then(([l, all, q]) => {
+      .then(([l, all, q, quizzes]) => {
         setLesson(l);
         setAllLessons(all.sort((a, b) => a.sortOrder - b.sortOrder));
         setQuiz(q);
+        setCourseQuizzes(quizzes);
+        setSelectedQuizId('');
       })
       .catch(() => toast.error('Failed to load lesson'))
       .finally(() => setLoading(false));
+  }
+
+  // Quizzes not linked to any lesson (available for assignment)
+  const unlinkedQuizzes = courseQuizzes.filter((q) => !q.lessonId);
+
+  async function handleLinkQuiz() {
+    if (!selectedQuizId) return;
+    setLinking(true);
+    try {
+      await updateQuiz(courseId, selectedQuizId, { lessonId: lessonId });
+      toast.success('Quiz linked to lesson');
+      fetchData();
+    } catch {
+      toast.error('Failed to link quiz');
+    } finally {
+      setLinking(false);
+    }
+  }
+
+  async function handleUnlinkQuiz() {
+    if (!quiz) return;
+    setLinking(true);
+    try {
+      await updateQuiz(courseId, quiz.id, { lessonId: null });
+      toast.success('Quiz unlinked from lesson');
+      fetchData();
+    } catch {
+      toast.error('Failed to unlink quiz');
+    } finally {
+      setLinking(false);
+    }
   }
 
   useEffect(() => {
@@ -140,16 +179,17 @@ export default function AdminLessonViewPage() {
               <ClipboardList className="size-4 text-muted-foreground" />
               <h2 className="font-semibold text-sm">Lesson Quiz</h2>
             </div>
-            {quiz ? (
-              <Button variant="outline" size="sm" onClick={() => setQuizFormOpen(true)}>
-                <Pencil className="size-3.5 mr-1" />
-                Edit Quiz
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" onClick={() => setQuizFormOpen(true)}>
-                <Plus className="size-3.5 mr-1" />
-                Add Quiz
-              </Button>
+            {quiz && (
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="sm" onClick={() => setQuizFormOpen(true)}>
+                  <Pencil className="size-3.5 mr-1" />
+                  Edit Quiz
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleUnlinkQuiz} disabled={linking}>
+                  <Unlink className="size-3.5 mr-1" />
+                  Unlink
+                </Button>
+              </div>
             )}
           </div>
 
@@ -184,9 +224,48 @@ export default function AdminLessonViewPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              No quiz attached. Agents will use &quot;Mark as Complete&quot; for this lesson.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                No quiz attached. Agents will use &quot;Mark as Complete&quot; for this lesson.
+              </p>
+
+              {/* Assign existing unlinked quiz */}
+              {unlinkedQuizzes.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedQuizId}
+                    onChange={(e) => setSelectedQuizId(e.target.value)}
+                    className="flex h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">Select an existing quiz...</option>
+                    {unlinkedQuizzes.map((q) => (
+                      <option key={q.id} value={q.id}>
+                        {q.title} ({q.questionCount} questions, {q.passingScore}% to pass)
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    size="sm"
+                    disabled={!selectedQuizId || linking}
+                    onClick={handleLinkQuiz}
+                  >
+                    <Link2 className="size-3.5 mr-1" />
+                    {linking ? 'Linking...' : 'Link'}
+                  </Button>
+                </div>
+              )}
+
+              {/* Or create new */}
+              <div className="flex items-center gap-2">
+                {unlinkedQuizzes.length > 0 && (
+                  <span className="text-xs text-muted-foreground">or</span>
+                )}
+                <Button variant="outline" size="sm" onClick={() => setQuizFormOpen(true)}>
+                  <Plus className="size-3.5 mr-1" />
+                  Create New Quiz
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </FadeIn>
