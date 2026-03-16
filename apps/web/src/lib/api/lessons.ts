@@ -25,7 +25,7 @@ export function createLesson(courseId: string, data: { title: string; descriptio
   return apiClient.post<Lesson>(`/courses/${courseId}/lessons`, data);
 }
 
-export function updateLesson(courseId: string, lessonId: string, data: { title?: string; description?: string; content?: Record<string, unknown> }) {
+export function updateLesson(courseId: string, lessonId: string, data: { title?: string; description?: string; content?: Record<string, unknown>; durationSec?: number | null }) {
   return apiClient.patch<Lesson>(`/courses/${courseId}/lessons/${lessonId}`, data);
 }
 
@@ -35,6 +35,10 @@ export function deleteLesson(courseId: string, lessonId: string) {
 
 export function reorderLessons(courseId: string, lessonIds: string[]) {
   return apiClient.post(`/courses/${courseId}/lessons/reorder`, { lessonIds });
+}
+
+export function getLessonProgress(courseId: string) {
+  return apiClient.get<Record<string, { isCompleted: boolean; progressPct: number }>>(`/courses/${courseId}/lessons/progress`);
 }
 
 export function updateProgress(courseId: string, lessonId: string, data: { progressPct: number; lastPosition?: number }) {

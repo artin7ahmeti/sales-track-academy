@@ -151,6 +151,7 @@ export function LessonFormDialog({
     setSubmitting(true);
     try {
       let s3Key = existingS3Key || undefined;
+      const durationSec = duration.trim() ? parseInt(duration, 10) * 60 : null;
 
       if (file) {
         s3Key = await uploadFileToS3(file);
@@ -163,6 +164,7 @@ export function LessonFormDialog({
           title,
           description: description || undefined,
           content,
+          durationSec,
         });
         toast.success('Lesson updated');
       } else {
@@ -171,7 +173,7 @@ export function LessonFormDialog({
           description: description || undefined,
           type,
           content,
-          durationSec: duration ? parseInt(duration) * 60 : undefined,
+          durationSec: durationSec ?? undefined,
         });
         toast.success('Lesson created');
       }
@@ -245,8 +247,12 @@ export function LessonFormDialog({
                 placeholder="Write your lesson content here..."
                 value={contentText}
                 onChange={(e) => setContentText(e.target.value)}
-                rows={6}
+                rows={10}
+                className="h-64 min-h-64 resize-none overflow-y-auto [field-sizing:fixed]"
               />
+              <p className="text-xs text-muted-foreground">
+                Long lessons scroll inside this field.
+              </p>
             </div>
           )}
 
