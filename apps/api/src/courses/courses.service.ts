@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageAppService } from '../storage/storage-app.service';
+import { MailService } from '../mail/mail.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { AssignCourseDto } from './dto/assign-course.dto';
@@ -9,9 +10,12 @@ import type { Prisma } from '@salestrack/database';
 
 @Injectable()
 export class CoursesService {
+  private readonly logger = new Logger(CoursesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageAppService,
+    private readonly mail: MailService,
   ) {}
 
   async findAll(query: CourseListQueryDto) {
@@ -217,14 +221,16 @@ export class CoursesService {
   }
 
   async assign(id: string, dto: AssignCourseDto) {
-    await this.ensureExists(id);
+    const course = await this.ensureExists(id);
 
     const assignments: Prisma.CourseAssignmentCreateManyInput[] = [];
+    const notifyUserIds = new Set<string>();
     const dueDate = dto.dueDate ? new Date(dto.dueDate) : undefined;
 
     if (dto.userIds?.length) {
       for (const userId of dto.userIds) {
         assignments.push({ courseId: id, userId, dueDate });
+        notifyUserIds.add(userId);
       }
     }
 
@@ -240,6 +246,7 @@ export class CoursesService {
       });
       for (const m of members) {
         assignments.push({ courseId: id, userId: m.userId, dueDate });
+        notifyUserIds.add(m.userId);
       }
     }
 
@@ -248,7 +255,36 @@ export class CoursesService {
       skipDuplicates: true,
     });
 
+    // Send email notifications (fire-and-forget to avoid slowing down the response)
+    if (notifyUserIds.size > 0) {
+      this.notifyAssignedUsers([...notifyUserIds], course.title, dueDate).catch(
+        (err) => this.logger.error('Failed to send assignment notifications', err),
+      );
+    }
+
     return { message: 'Course assigned successfully' };
+  }
+
+  private async notifyAssignedUsers(
+    userIds: string[],
+    courseTitle: string,
+    dueDate?: Date,
+  ) {
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { email: true, name: true },
+    });
+
+    await Promise.allSettled(
+      users.map((user) =>
+        this.mail.sendCourseAssignment(
+          user.email,
+          user.name ?? user.email,
+          courseTitle,
+          dueDate,
+        ),
+      ),
+    );
   }
 
   private extractS3Key(content: unknown): string | null {

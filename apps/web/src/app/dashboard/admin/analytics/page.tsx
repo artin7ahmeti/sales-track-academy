@@ -182,7 +182,7 @@ export default function AnalyticsPage() {
 
   // Agent individual view
   const [agents, setAgents] = useState<UserType[]>([]);
-  const [selectedAgentId, setSelectedAgentId] = useState('');
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [agentData, setAgentData] = useState<AgentProgress | null>(null);
   const [agentLoading, setAgentLoading] = useState(false);
 
@@ -212,7 +212,11 @@ export default function AnalyticsPage() {
   }, []);
 
   function handleSelectAgent(value: string | null) {
-    if (!value) return;
+    if (!value) {
+      setSelectedAgentId(null);
+      setAgentData(null);
+      return;
+    }
     setSelectedAgentId(value);
     loadAgentData(value);
   }
@@ -244,7 +248,7 @@ export default function AnalyticsPage() {
           agent={agentData}
           avatarUrl={agents.find((a) => a.id === selectedAgentId)?.avatarUrl ?? null}
           onBack={() => {
-            setSelectedAgentId('');
+            setSelectedAgentId(null);
             setAgentData(null);
           }}
         />
@@ -311,7 +315,7 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               <Select
-                value={selectedAgentId || undefined}
+                value={selectedAgentId}
                 onValueChange={handleSelectAgent}
               >
                 <SelectTrigger className="w-full">

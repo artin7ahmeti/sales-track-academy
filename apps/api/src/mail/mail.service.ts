@@ -191,6 +191,81 @@ export class MailService implements OnModuleInit {
     };
   }
 
+  async sendCourseAssignment(
+    email: string,
+    userName: string,
+    courseTitle: string,
+    dueDate?: Date | null,
+  ): Promise<'sent' | 'skipped' | 'failed'> {
+    if (!this.transporter || !this.smtpConfig) {
+      this.logger.warn(`SMTP not configured — skipping course assignment email for ${email}`);
+      return 'skipped';
+    }
+
+    const coursesUrl = `${this.frontendUrl}/dashboard/agent/courses`;
+    const dueLine = dueDate
+      ? `<p style="margin:12px 0 0;color:#666;font-size:14px;">
+           <strong>Due date:</strong> ${dueDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+         </p>`
+      : '';
+    const dueText = dueDate
+      ? `\nDue date: ${dueDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`
+      : '';
+
+    try {
+      await this.transporter.sendMail({
+        from: `"SalesTrack Academy" <${this.smtpConfig.fromAddress}>`,
+        to: email,
+        subject: `New course assigned: ${courseTitle}`,
+        html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f4f4f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:480px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+        <tr><td style="padding:32px 32px 24px;text-align:center;">
+          <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111;">New Course Assigned</h1>
+          <p style="margin:0;color:#666;font-size:14px;line-height:1.5;">
+            Hi <strong>${userName}</strong>, you've been assigned a new course on <strong>SalesTrack Academy</strong>:
+          </p>
+          <p style="margin:16px 0 0;color:#111;font-size:18px;font-weight:600;">${courseTitle}</p>
+          ${dueLine}
+        </td></tr>
+        <tr><td style="padding:0 32px 32px;text-align:center;">
+          <a href="${coursesUrl}"
+             style="display:inline-block;padding:12px 32px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
+            View My Courses
+          </a>
+        </td></tr>
+        <tr><td style="padding:16px 32px;border-top:1px solid #eee;text-align:center;">
+          <p style="margin:0;color:#aaa;font-size:11px;">
+            You received this email because a course was assigned to you in SalesTrack Academy.
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+        text: `Hi ${userName},\n\nYou've been assigned a new course on SalesTrack Academy: ${courseTitle}${dueText}\n\nView your courses: ${coursesUrl}`,
+      });
+
+      this.connectionReady = true;
+      this.connectionError = null;
+      this.logger.log(`Course assignment email sent to ${email}`);
+      return 'sent';
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown SMTP send error';
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.connectionReady = false;
+      this.connectionError = message;
+      this.logger.error(`Failed to send course assignment email to ${email}: ${message}`, stack);
+      return 'failed';
+    }
+  }
+
   private buildInviteUrl(token: string) {
     const inviteUrl = new URL('/public/accept-invite', this.frontendUrl);
     inviteUrl.searchParams.set('token', token);
