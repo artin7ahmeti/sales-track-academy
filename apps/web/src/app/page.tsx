@@ -259,7 +259,7 @@ export default function Home() {
                         onChange={(e) => setEmail(e.target.value)}
                         className="h-10 border-black/30"
                       />
-                      <Button type="submit" className="shrink-0">
+                      <Button type="submit" className="shrink-30 h-10 px-4">
                         Get Started
                         <ArrowRight className="ml-1 size-4" />
                       </Button>
