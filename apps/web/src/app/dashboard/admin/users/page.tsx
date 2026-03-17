@@ -54,6 +54,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
+  const hasActiveFilters = !!search.trim() || roleFilter !== 'ALL';
 
   // Invite dialog
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -222,7 +223,7 @@ export default function UsersPage() {
         </div>
       </FadeIn>
 
-      {users.length > 0 && (
+      {(users.length > 0 || hasActiveFilters) && (
         <FadeIn delay={100}>
           <div className="flex items-center gap-3">
             <div className="relative max-w-sm flex-1">
@@ -249,7 +250,7 @@ export default function UsersPage() {
       )}
 
       <FadeIn delay={150}>
-        {users.length === 0 && !search && roleFilter === 'ALL' ? (
+        {users.length === 0 && !hasActiveFilters ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <div className="rounded-full bg-muted p-4 mb-4">
