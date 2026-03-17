@@ -186,6 +186,10 @@ export default function AnalyticsPage() {
   const [agentData, setAgentData] = useState<AgentProgress | null>(null);
   const [agentLoading, setAgentLoading] = useState(false);
 
+  const selectedAgent = selectedAgentId
+    ? agents.find((agent) => agent.id === selectedAgentId) ?? null
+    : null;
+
   useEffect(() => {
     async function load() {
       const [orgResult, usersResult] = await Promise.allSettled([
@@ -246,7 +250,7 @@ export default function AnalyticsPage() {
         </FadeIn>
         <AgentDetailView
           agent={agentData}
-          avatarUrl={agents.find((a) => a.id === selectedAgentId)?.avatarUrl ?? null}
+          avatarUrl={selectedAgent?.avatarUrl ?? null}
           onBack={() => {
             setSelectedAgentId(null);
             setAgentData(null);
@@ -319,7 +323,18 @@ export default function AnalyticsPage() {
                 onValueChange={handleSelectAgent}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select an agent..." />
+                  {selectedAgent ? (
+                    <div className="flex min-w-0 items-center gap-2">
+                      <AgentAvatar
+                        avatarUrl={selectedAgent.avatarUrl}
+                        name={selectedAgent.name}
+                        className="size-5"
+                      />
+                      <span className="truncate">{selectedAgent.name}</span>
+                    </div>
+                  ) : (
+                    <SelectValue placeholder="Select an agent..." />
+                  )}
                 </SelectTrigger>
                 <SelectContent>
                   {agents.map((a) => (
