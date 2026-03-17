@@ -248,11 +248,8 @@ export function LessonFormDialog({
                 value={contentText}
                 onChange={(e) => setContentText(e.target.value)}
                 rows={10}
-                className="h-64 min-h-64 resize-none overflow-y-auto [field-sizing:fixed]"
+                className="h-30 min-h-30 resize-none overflow-y-auto [field-sizing:fixed]"
               />
-              <p className="text-xs text-muted-foreground">
-                Long lessons scroll inside this field.
-              </p>
             </div>
           )}
 

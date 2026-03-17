@@ -25,7 +25,7 @@ export const SignupSchema = z.object({
 export type SignupRequest = z.infer<typeof SignupSchema>;
 
 export const RefreshTokenSchema = z.object({
-  refreshToken: z.string().min(1),
+  refreshToken: z.string().min(1).optional(),
 });
 
 export type RefreshTokenRequest = z.infer<typeof RefreshTokenSchema>;

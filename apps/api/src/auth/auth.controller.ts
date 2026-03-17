@@ -3,12 +3,14 @@ import {
   Post,
   Get,
   Body,
+  Req,
   UseGuards,
   Res,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { CookieOptions, Response } from 'express';
+import { CookieOptions, Request, Response } from 'express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -97,9 +99,16 @@ export class AuthController {
   @ApiOkResponse({ description: 'New token pair.' })
   async refresh(
     @Body() refreshTokenDto: RefreshTokenDto,
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.authService.refreshTokens(refreshTokenDto.refreshToken);
+    const refreshToken = refreshTokenDto.refreshToken ?? request.cookies?.refresh_token;
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+
+    const result = await this.authService.refreshTokens(refreshToken);
 
     response.cookie(
       'access_token',
