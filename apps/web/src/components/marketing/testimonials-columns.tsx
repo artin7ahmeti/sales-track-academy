@@ -172,7 +172,7 @@ export function TestimonialsColumns() {
             <h2 className="text-3xl font-bold tracking-tight">
               Trusted by teams building a stronger sales floor
             </h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="mt-4 text-slate-700">
               Sales leaders use SalesTrack Academy to make onboarding repeatable,
               measurable, and easier to scale across the organization.
             </p>

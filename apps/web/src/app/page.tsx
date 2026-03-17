@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { MorphingText } from '@/components/ui/morphing-text';
 import { LightRaysBackground } from '@/components/backgrounds/light-rays-background';
 import { FadeIn, StaggerChildren } from '@/components/animations/fade-in';
 import { TestimonialsColumns } from '@/components/marketing/testimonials-columns';
@@ -42,6 +43,13 @@ const highlights = [
   'Built-in quiz assessments',
   'Real-time progress tracking',
   'Group-based course assignment',
+];
+
+const heroMorphingTexts = [
+  'Training',
+  'Confidence',
+  'Coaching',
+  'Onboarding',
 ];
 
 export default function Home() {
@@ -216,19 +224,26 @@ export default function Home() {
               <div className="mx-auto max-w-xl text-center lg:mx-0 lg:w-1/2 lg:text-left">
                 <FadeIn delay={100} duration={700}>
                   <div className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border border-black/30 px-3 py-1 lg:mx-0">
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">New</span>
-                    <span className="text-sm text-muted-foreground">Self-service agent onboarding</span>
+                    <span className="rounded-full bg-slate-500 px-2 py-0.5 text-xs font-medium text-primary">New</span>
+                    <span className="text-sm text-slate-700">Self-service agent onboarding</span>
                   </div>
                 </FadeIn>
 
                 <FadeIn delay={200} duration={700}>
-                  <h1 className="text-balance text-4xl font-bold tracking-tight md:text-5xl">
-                    Empower Your Sales Team with Structured Training
+                  <h1 className="text-balance font-bold tracking-tight">
+                    <span className="block text-4xl md:text-5xl lg:text-[3.6rem]">
+                      Empower Your Sales Team with
+                    </span>
+                    <MorphingText
+                      as="span"
+                      texts={heroMorphingTexts}
+                      className="mt-2 h-[1.15em] max-w-none font-heading text-[2.35rem] tracking-tight md:h-[1.15em] md:text-5xl lg:mx-0 lg:text-left lg:text-[3.6rem]"
+                    />
                   </h1>
                 </FadeIn>
 
                 <FadeIn delay={350} duration={700}>
-                  <p className="mt-6 text-lg text-muted-foreground">
+                  <p className="mt-6 text-lg text-slate-700">
                     Centralize training materials and track your sales agents&apos; proficiency
                     in real time. Build courses, assess knowledge, and accelerate ramp-up.
                   </p>
@@ -255,7 +270,7 @@ export default function Home() {
                 <FadeIn delay={650} duration={700}>
                   <ul className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 lg:justify-start">
                     {highlights.map((item) => (
-                      <li key={item} className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <li key={item} className="flex items-center gap-1.5 text-sm text-slate-700">
                         <CheckCircle className="size-3.5 text-primary" />
                         {item}
                       </li>
@@ -269,12 +284,12 @@ export default function Home() {
                 <div className="relative rounded-2xl border bg-muted/30 p-6 shadow-lg">
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
-                      <div className="rounded-lg bg-primary/10 p-2">
+                      <div className="rounded-lg bg-slate-500 p-2">
                         <BarChart3 className="size-5 text-primary" />
                       </div>
                       <div>
                         <p className="text-sm font-medium">Organization Analytics</p>
-                        <p className="text-xs text-muted-foreground">Real-time training metrics</p>
+                        <p className="text-xs text-slate-700">Real-time training metrics</p>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
@@ -285,13 +300,13 @@ export default function Home() {
                       ].map((stat) => (
                         <div key={stat.label} className="rounded-lg bg-background p-3 text-center shadow-sm">
                           <p className="text-lg font-bold">{stat.value}</p>
-                          <p className="text-xs text-muted-foreground">{stat.label}</p>
+                          <p className="text-xs text-slate-700">{stat.label}</p>
                         </div>
                       ))}
                     </div>
                     <div className="space-y-2">
                       {['Cold Calling Techniques', 'Objection Handling', 'Closing Strategies'].map((course, i) => (
-                        <div key={course} className="flex items-center justify-between rounded-lg bg-background p-3 shadow-sm">
+                        <div key={course} className="flex items-center justify-between rounded-lg bg-background/60 p-3 shadow-sm">
                           <div className="flex items-center gap-2">
                             <BookOpen className="size-4 text-muted-foreground" />
                             <span className="text-sm">{course}</span>
@@ -324,7 +339,7 @@ export default function Home() {
                 <h2 className="text-3xl font-bold tracking-tight">
                   Everything you need to train your sales team
                 </h2>
-                <p className="mt-4 text-muted-foreground">
+                <p className="mt-4 text-slate-700">
                   From content creation to performance analytics, SalesTrack Academy
                   gives training managers full visibility and control.
                 </p>
@@ -337,13 +352,13 @@ export default function Home() {
               className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
             >
               {features.map((feature) => (
-                <Card key={feature.title} className="border-dashed bg-white/85 group hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+                <Card key={feature.title} className="border-dashed bg-slate-300/30 group hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
                   <CardContent className="pt-6">
-                    <div className="mb-4 rounded-lg bg-primary/10 p-2.5 w-fit group-hover:bg-primary/15 transition-colors duration-300">
+                    <div className="mb-4 rounded-lg bg-slate-500 p-2.5 w-fit group-hover:bg-primary/15 transition-colors duration-300">
                       <feature.icon className="size-5 text-primary" />
                     </div>
                     <h3 className="font-semibold">{feature.title}</h3>
-                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                    <p className="mt-2 text-sm text-slate-700 leading-relaxed">
                       {feature.description}
                     </p>
                   </CardContent>
@@ -362,7 +377,7 @@ export default function Home() {
               <h2 className="text-3xl font-bold tracking-tight">
                 Ready to level up your team?
               </h2>
-              <p className="mt-4 text-muted-foreground">
+              <p className="mt-4 text-slate-700">
                 Join SalesTrack Academy and start building better sales agents today.
               </p>
               <div className="mt-8 flex justify-center gap-3">
@@ -389,9 +404,9 @@ export default function Home() {
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-2">
               <GraduationCap className="size-5 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">SalesTrack Academy</span>
+              <span className="text-sm text-slate-700">SalesTrack Academy</span>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-700">
               &copy; {new Date().getFullYear()} SalesTrack Academy. All rights reserved.
             </p>
           </div>
