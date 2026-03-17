@@ -1,5 +1,6 @@
 import {
   DeleteObjectCommand,
+  GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
 } from '@aws-sdk/client-s3';
@@ -36,6 +37,19 @@ export class StorageService {
       Key: key,
     });
     await getS3Client().send(command);
+  }
+
+  async getFile(key: string): Promise<{ body: Buffer; contentType: string }> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    });
+    const response = await getS3Client().send(command);
+    const bytes = await response.Body!.transformToByteArray();
+    return {
+      body: Buffer.from(bytes),
+      contentType: response.ContentType || 'application/octet-stream',
+    };
   }
 
   async fileExists(key: string): Promise<boolean> {

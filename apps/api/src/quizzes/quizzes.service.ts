@@ -1,11 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CertificatesService } from '../certificates/certificates.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
 
 @Injectable()
 export class QuizzesService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(QuizzesService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly certificatesService: CertificatesService,
+  ) {}
 
   async findByCourse(courseId: string) {
     const quizzes = await this.prisma.quiz.findMany({
@@ -357,6 +363,17 @@ export class QuizzesService {
         where: { courseId, userId },
         data: { status: 'COMPLETED', completedAt: new Date() },
       });
+
+      // Auto-generate certificate on course completion
+      try {
+        await this.certificatesService.generateCertificate(courseId, userId);
+        this.logger.log(`Certificate generated for user ${userId} on course ${courseId}`);
+      } catch (error) {
+        this.logger.error(
+          `Failed to generate certificate for user ${userId} on course ${courseId}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+      }
     } else {
       await this.prisma.courseAssignment.updateMany({
         where: { courseId, userId, status: 'ASSIGNED' },

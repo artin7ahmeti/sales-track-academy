@@ -8,3 +8,4 @@ export * from './quizzes';
 export * from './comments';
 export * from './analytics';
 export * from './storage';
+export * from './certificates';

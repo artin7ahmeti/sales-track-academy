@@ -55,6 +55,7 @@ model User {
   refreshTokens      RefreshToken[]
   sentInvitations    Invitation[]       @relation("InvitedBy")
   receivedInvitation Invitation?        @relation("InvitedUser")
+  certificates       Certificate[]
 
   @@map("users")
 }
@@ -129,9 +130,10 @@ model Course {
   updatedAt    DateTime  @updatedAt @map("updated_at")
   deletedAt    DateTime? @map("deleted_at")
 
-  lessons     Lesson[]
-  quizzes     Quiz[]
-  assignments CourseAssignment[]
+  lessons      Lesson[]
+  quizzes      Quiz[]
+  assignments  CourseAssignment[]
+  certificates Certificate[]
 
   @@map("courses")
 }
@@ -258,6 +260,23 @@ model LessonProgress {
 
   @@unique([lessonId, userId])
   @@map("lesson_progress")
+}
+
+// ─── Certificates ───────────────────────────────────
+
+model Certificate {
+  id                String   @id @default(cuid())
+  userId            String   @map("user_id")
+  courseId           String   @map("course_id")
+  certificateNumber String   @unique @map("certificate_number")
+  pdfKey            String   @map("pdf_key")
+  issuedAt          DateTime @default(now()) @map("issued_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("certificates")
 }
 
 // ─── Comments ────────────────────────────────────────────

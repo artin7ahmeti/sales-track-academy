@@ -34,6 +34,14 @@ export class StorageAppService {
     return { confirmed: exists, key };
   }
 
+  async getFile(key: string): Promise<{ body: Buffer; contentType: string }> {
+    return this.storage.getFile(key);
+  }
+
+  async uploadFile(key: string, body: Buffer, contentType: string): Promise<void> {
+    await this.storage.uploadFile(key, body, contentType);
+  }
+
   async deleteFile(key: string) {
     await this.storage.deleteFile(key);
   }
