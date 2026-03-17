@@ -138,14 +138,14 @@ export function AppSidebar({ navigation }: AppSidebarProps) {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold leading-tight">SalesTrack</span>
-            <span className="text-[10px] text-muted-foreground leading-tight">Academy</span>
+            <span className="text-[10px] text-slate-700 leading-tight">Academy</span>
           </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60">
+          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-slate-700">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
