@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { LightRaysBackground } from '@/components/backgrounds/light-rays-background';
 import { FadeIn, StaggerChildren } from '@/components/animations/fade-in';
+import { TestimonialsColumns } from '@/components/marketing/testimonials-columns';
 import {
   GraduationCap, BookOpen, Brain, BarChart3,
   Users, ArrowRight, Menu, X, CheckCircle,
@@ -308,6 +309,8 @@ export default function Home() {
             </StaggerChildren>
           </div>
         </section>
+
+        <TestimonialsColumns />
 
         {/* CTA Section */}
         <section className="py-20">
