@@ -40,6 +40,11 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
+function isNavItemActive(pathname: string, href: string) {
+  const isDashboardRoot = href === '/dashboard/agent' || href === '/dashboard/admin';
+  return pathname === href || (!isDashboardRoot && pathname.startsWith(href + '/'));
+}
+
 interface AppSidebarProps {
   navigation: NavItem[];
 }
@@ -151,8 +156,7 @@ export function AppSidebar({ navigation }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               {navigation.map((item) => {
-                const isActive =
-                  pathname === item.href || pathname.startsWith(item.href + '/');
+                const isActive = isNavItemActive(pathname, item.href);
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton isActive={isActive} tooltip={item.title}>
