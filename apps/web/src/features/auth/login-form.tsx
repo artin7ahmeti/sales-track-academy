@@ -17,7 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { GraduationCap, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Role } from '@salestrack/contracts';
 
 const loginSchema = z.object({
@@ -55,22 +55,18 @@ export function LoginForm({ defaultEmail = '' }: { defaultEmail?: string }) {
   }
 
   return (
-    <div
-      className="mx-auto w-full max-w-md glass-card-strong rounded-2xl p-8 md:p-10"
-      style={{ animation: 'page-fade-in 0.7s ease-out both 0.3s' }}
-    >
-      <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
-          <GraduationCap className="size-6 text-white" />
-        </div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Welcome back</h1>
-        <p className="mt-1.5 text-sm text-white/50">Sign in to SalesTrack Academy</p>
+    <div style={{ animation: 'page-fade-in 0.6s ease-out both 0.15s' }}>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Sign in to your SalesTrack Academy account
+        </p>
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-300">
+            <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
               {error}
             </div>
           )}
@@ -79,18 +75,16 @@ export function LoginForm({ defaultEmail = '' }: { defaultEmail?: string }) {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-white/70 text-xs font-medium uppercase tracking-wider">
-                  Email
-                </FormLabel>
+                <FormLabel>Email</FormLabel>
                 <FormControl>
                   <Input
                     type="email"
                     placeholder="your@company.com"
-                    className="h-11 border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/25 focus:ring-white/10"
+                    className="h-10"
                     {...field}
                   />
                 </FormControl>
-                <FormMessage className="text-red-300" />
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -99,24 +93,22 @@ export function LoginForm({ defaultEmail = '' }: { defaultEmail?: string }) {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-white/70 text-xs font-medium uppercase tracking-wider">
-                  Password
-                </FormLabel>
+                <FormLabel>Password</FormLabel>
                 <FormControl>
                   <Input
                     type="password"
-                    placeholder="••••••••"
-                    className="h-11 border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/25 focus:ring-white/10"
+                    placeholder="Enter your password"
+                    className="h-10"
                     {...field}
                   />
                 </FormControl>
-                <FormMessage className="text-red-300" />
+                <FormMessage />
               </FormItem>
             )}
           />
           <Button
             type="submit"
-            className="w-full h-11 bg-white text-black font-medium hover:bg-white/90 transition-all duration-200"
+            className="w-full h-10"
             disabled={form.formState.isSubmitting}
           >
             {form.formState.isSubmitting ? (
@@ -132,11 +124,11 @@ export function LoginForm({ defaultEmail = '' }: { defaultEmail?: string }) {
       </Form>
 
       <div className="mt-6 text-center">
-        <p className="text-sm text-white/40">
+        <p className="text-sm text-muted-foreground">
           Don&apos;t have an account?{' '}
           <Link
             href={defaultEmail ? `/public/signup?email=${encodeURIComponent(defaultEmail)}` : '/public/signup'}
-            className="text-white/80 font-medium hover:text-white transition-colors"
+            className="font-medium text-primary hover:underline"
           >
             Create one
           </Link>

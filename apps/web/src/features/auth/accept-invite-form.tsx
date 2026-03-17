@@ -17,7 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { ArrowRight, GraduationCap } from 'lucide-react';
+import { ArrowRight, CheckCircle } from 'lucide-react';
 
 const acceptInviteSchema = z
   .object({
@@ -59,41 +59,34 @@ export function AcceptInviteForm({ token }: { token: string }) {
     }
   }
 
-  const inputClasses =
-    'h-11 border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:border-white/25 focus:ring-white/10';
-
   if (success) {
     return (
       <div
-        className="mx-auto w-full max-w-md rounded-2xl p-8 text-center glass-card-strong md:p-10"
-        style={{ animation: 'page-fade-in 0.7s ease-out both 0.3s' }}
+        className="text-center py-8"
+        style={{ animation: 'page-fade-in 0.6s ease-out both' }}
       >
-        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
-          <GraduationCap className="size-6 text-white" />
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-green-100">
+          <CheckCircle className="size-6 text-green-600" />
         </div>
-        <p className="text-2xl font-bold tracking-tight text-white">Account activated</p>
-        <p className="mt-2 text-sm text-white/50">Redirecting you to sign in...</p>
+        <h2 className="text-2xl font-bold tracking-tight">Account activated</h2>
+        <p className="mt-2 text-sm text-muted-foreground">Redirecting you to sign in...</p>
       </div>
     );
   }
 
   return (
-    <div
-      className="mx-auto w-full max-w-md rounded-2xl p-8 glass-card-strong md:p-10"
-      style={{ animation: 'page-fade-in 0.7s ease-out both 0.3s' }}
-    >
-      <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
-          <GraduationCap className="size-6 text-white" />
-        </div>
-        <h1 className="text-2xl font-bold tracking-tight text-white">Accept your invitation</h1>
-        <p className="mt-1.5 text-sm text-white/50">Set up your account to join SalesTrack Academy</p>
+    <div style={{ animation: 'page-fade-in 0.6s ease-out both 0.15s' }}>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight">Accept your invitation</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Set up your account to join SalesTrack Academy
+        </p>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+            <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
               {error}
             </div>
           )}
@@ -102,13 +95,11 @@ export function AcceptInviteForm({ token }: { token: string }) {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs font-medium uppercase tracking-wider text-white/70">
-                  Full Name
-                </FormLabel>
+                <FormLabel>Full Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="John Doe" className={inputClasses} {...field} />
+                  <Input placeholder="John Doe" className="h-10" {...field} />
                 </FormControl>
-                <FormMessage className="text-red-300" />
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -118,18 +109,16 @@ export function AcceptInviteForm({ token }: { token: string }) {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium uppercase tracking-wider text-white/70">
-                    Password
-                  </FormLabel>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
-                      placeholder="password"
-                      className={inputClasses}
+                      placeholder="Min. 8 chars"
+                      className="h-10"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage className="text-red-300" />
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -138,25 +127,23 @@ export function AcceptInviteForm({ token }: { token: string }) {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-medium uppercase tracking-wider text-white/70">
-                    Confirm
-                  </FormLabel>
+                  <FormLabel>Confirm</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
-                      placeholder="password"
-                      className={inputClasses}
+                      placeholder="Re-enter"
+                      className="h-10"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage className="text-red-300" />
+                  <FormMessage />
                 </FormItem>
               )}
             />
           </div>
           <Button
             type="submit"
-            className="mt-1 h-11 w-full bg-white font-medium text-black transition-all duration-200 hover:bg-white/90"
+            className="w-full h-10"
             disabled={form.formState.isSubmitting}
           >
             {form.formState.isSubmitting ? (
@@ -172,11 +159,11 @@ export function AcceptInviteForm({ token }: { token: string }) {
       </Form>
 
       <div className="mt-6 text-center">
-        <p className="text-sm text-white/40">
+        <p className="text-sm text-muted-foreground">
           Already activated?{' '}
           <Link
             href="/public/login"
-            className="font-medium text-white/80 transition-colors hover:text-white"
+            className="font-medium text-primary hover:underline"
           >
             Sign in
           </Link>

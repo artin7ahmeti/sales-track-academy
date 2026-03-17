@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { GraduationCap } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { AcceptInviteForm } from '@/features/auth/accept-invite-form';
 
 export default async function AcceptInvitePage({
@@ -12,19 +12,19 @@ export default async function AcceptInvitePage({
   if (!token) {
     return (
       <div
-        className="mx-auto w-full max-w-md rounded-2xl p-8 text-center glass-card-strong md:p-10"
-        style={{ animation: 'page-fade-in 0.7s ease-out both 0.3s' }}
+        className="text-center py-8"
+        style={{ animation: 'page-fade-in 0.6s ease-out both' }}
       >
-        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20">
-          <GraduationCap className="size-6 text-white" />
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-destructive/10">
+          <AlertCircle className="size-6 text-destructive" />
         </div>
-        <p className="text-2xl font-bold tracking-tight text-white">Invalid invitation link</p>
-        <p className="mt-2 text-sm text-white/50">
+        <h2 className="text-2xl font-bold tracking-tight">Invalid invitation link</h2>
+        <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
           Please check your email and make sure you opened the full invitation URL.
         </p>
         <Link
           href="/public/login"
-          className="mt-6 inline-flex text-sm font-medium text-white/80 transition-colors hover:text-white"
+          className="mt-6 inline-flex text-sm font-medium text-primary hover:underline"
         >
           Back to sign in
         </Link>
