@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { PaginationQueryDto } from '../common/dto/pagination.dto';
+import { Role } from '@salestrack/contracts';
 
 @Injectable()
 export class GroupsService {
@@ -72,6 +73,10 @@ export class GroupsService {
   }
 
   async create(dto: CreateGroupDto) {
+    if (dto.memberIds?.length) {
+      await this.ensureAssignableAgents(dto.memberIds);
+    }
+
     const group = await this.prisma.group.create({
       data: {
         name: dto.name,
@@ -118,6 +123,7 @@ export class GroupsService {
 
   async addMembers(id: string, userIds: string[]) {
     await this.ensureExists(id);
+    await this.ensureAssignableAgents(userIds);
     await this.prisma.groupMember.createMany({
       data: userIds.map((userId) => ({ groupId: id, userId })),
       skipDuplicates: true,
@@ -137,5 +143,24 @@ export class GroupsService {
     const group = await this.prisma.group.findUnique({ where: { id } });
     if (!group) throw new NotFoundException('Group not found');
     return group;
+  }
+
+  private async ensureAssignableAgents(userIds: string[]) {
+    if (userIds.length === 0) return;
+
+    const uniqueUserIds = [...new Set(userIds)];
+    const agents = await this.prisma.user.findMany({
+      where: {
+        id: { in: uniqueUserIds },
+        role: Role.AGENT,
+        isActive: true,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+
+    if (agents.length !== uniqueUserIds.length) {
+      throw new BadRequestException('Groups can only include active agents');
+    }
   }
 }

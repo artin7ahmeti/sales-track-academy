@@ -72,7 +72,6 @@ function AgentDetailView({ agent, avatarUrl, onBack }: { agent: AgentProgress; a
             <AgentAvatar avatarUrl={avatarUrl} name={agent.userName} />
             <div>
               <h2 className="text-lg font-bold tracking-tight">{agent.userName}</h2>
-              <p className="text-sm text-muted-foreground">Individual performance breakdown</p>
             </div>
           </div>
         </div>

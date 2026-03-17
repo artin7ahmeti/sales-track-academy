@@ -102,7 +102,7 @@ export default function GroupsPage() {
     try {
       const [detail, usersRes] = await Promise.all([
         getGroup(group.id),
-        getUsers({ limit: 100 }),
+        getUsers({ limit: 100, role: 'AGENT', isActive: true }),
       ]);
       setMembersGroup(detail);
       setAllUsers(usersRes.data);
@@ -181,7 +181,7 @@ export default function GroupsPage() {
   }
 
   const availableUsers = allUsers.filter(
-    (u) => u.isActive && !membersGroup?.members.some((m) => m.userId === u.id),
+    (u) => !membersGroup?.members.some((m) => m.userId === u.id),
   );
 
   if (loading) {
@@ -367,7 +367,7 @@ export default function GroupsPage() {
               Members &mdash; {membersGroup?.name}
             </DialogTitle>
             <DialogDescription>
-              Add or remove members from this group.
+              Add or remove agent members from this group.
             </DialogDescription>
           </DialogHeader>
 
@@ -386,7 +386,7 @@ export default function GroupsPage() {
                   value={selectedUserId}
                   onChange={(e) => setSelectedUserId(e.target.value)}
                 >
-                  <option value="">Select a user to add...</option>
+                  <option value="">Select an agent to add...</option>
                   {availableUsers.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.name} ({u.email})

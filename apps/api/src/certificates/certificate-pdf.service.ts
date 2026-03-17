@@ -38,7 +38,7 @@ export class CertificatePdfService {
       const im = 36;
       doc.lineWidth(0.5)
         .roundedRect(im, im, W - im * 2, H - im * 2, 6)
-        .stroke('#c4a35a');
+        .stroke('#004391');
 
       // ── Corner ornaments ──
       this.drawCornerOrnaments(doc, W, H);
@@ -47,15 +47,7 @@ export class CertificatePdfService {
       const lineY = 80;
       doc.lineWidth(1.5)
         .moveTo(120, lineY).lineTo(W - 120, lineY)
-        .stroke('#c4a35a');
-
-      // ── "CERTIFICATE" title ──
-      doc.fontSize(11)
-        .font('Helvetica')
-        .fillColor('#c4a35a');
-      const certLabel = 'CERTIFICATE';
-      const certW = doc.widthOfString(certLabel);
-      doc.text(certLabel, (W - certW) / 2, lineY - 6, { lineBreak: false });
+        .stroke('#004391');
 
       // ── "of Achievement" ──
       doc.fontSize(28)
@@ -69,14 +61,14 @@ export class CertificatePdfService {
       const divY = 145;
       doc.lineWidth(0.5)
         .moveTo(280, divY).lineTo(W - 280, divY)
-        .stroke('#c4a35a');
+        .stroke('#004391');
       // Small diamond in center
       const cx = W / 2;
       doc.save()
         .translate(cx, divY)
         .rotate(45)
         .rect(-3, -3, 6, 6)
-        .fill('#c4a35a')
+        .fill('#004391')
         .restore();
 
       // ── "This is to certify that" ──
@@ -98,7 +90,7 @@ export class CertificatePdfService {
       const nameUnderY = 242;
       doc.lineWidth(1)
         .moveTo(200, nameUnderY).lineTo(W - 200, nameUnderY)
-        .stroke('#c4a35a');
+        .stroke('#004391');
 
       // ── "has successfully completed" ──
       doc.fontSize(11)
@@ -162,7 +154,7 @@ export class CertificatePdfService {
       const bottomLineY = H - 80;
       doc.lineWidth(1.5)
         .moveTo(120, bottomLineY).lineTo(W - 120, bottomLineY)
-        .stroke('#c4a35a');
+        .stroke('#004391');
 
       // ── Footer text ──
       doc.fontSize(8)
@@ -179,7 +171,7 @@ export class CertificatePdfService {
   private drawCornerOrnaments(doc: PDFKit.PDFDocument, W: number, H: number) {
     const size = 18;
     const offset = 42;
-    const color = '#c4a35a';
+    const color = '#004391';
 
     // Top-left
     doc.lineWidth(1.5)
@@ -203,12 +195,12 @@ export class CertificatePdfService {
     // Outer circle
     doc.lineWidth(2)
       .circle(cx, cy, 30)
-      .stroke('#c4a35a');
+      .stroke('#004391');
 
     // Inner circle
     doc.lineWidth(0.5)
       .circle(cx, cy, 24)
-      .stroke('#c4a35a');
+      .stroke('#004391');
 
     // Star-like shape
     const points = 8;
@@ -222,7 +214,7 @@ export class CertificatePdfService {
       doc.lineTo(Math.cos(outerAngle) * outerR, Math.sin(outerAngle) * outerR);
       doc.lineTo(Math.cos(innerAngle) * innerR, Math.sin(innerAngle) * innerR);
     }
-    doc.closePath().fill('#c4a35a');
+    doc.closePath().fill('#004391');
     doc.restore();
 
     // Checkmark in center
