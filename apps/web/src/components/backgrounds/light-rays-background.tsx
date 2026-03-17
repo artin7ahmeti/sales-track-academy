@@ -25,11 +25,11 @@ export function LightRaysBackground({
       <LightRays
         className="h-full w-full"
         raysOrigin="top-right"
-        raysColor="#ff0505"
+        raysColor="#01064e"
         raysSpeed={0.3}
-        lightSpread={0.7}
+        lightSpread={1}
         rayLength={3.2}
-        fadeDistance={3.3}
+        fadeDistance={6}
         saturation={1.2}
         noiseAmount={0.05}
         distortion={0.1}

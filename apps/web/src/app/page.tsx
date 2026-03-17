@@ -121,6 +121,16 @@ export default function Home() {
                     Features
                   </Button>
                 </Link>
+                <Link href="#testimonials">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="transition-all duration-500 text-foreground/70 hover:text-foreground"
+                    style={{ height: scrolled ? 32 : 36, fontSize: scrolled ? '12px' : '14px' }}
+                  >
+                    Testimonials
+                  </Button>
+                </Link>
                 <Link href="/public/login">
                   <Button
                     variant="ghost"
@@ -150,11 +160,20 @@ export default function Home() {
           </div>
 
           {/* Mobile menu */}
-          {menuOpen && !scrolled && (
-            <div className="border-t bg-background/95 backdrop-blur-sm pb-4 pt-2 lg:hidden">
-              <div className="flex flex-col gap-2 mx-auto max-w-6xl px-6">
+          {menuOpen && (
+            <div
+              className={`lg:hidden ${
+                scrolled
+                  ? 'mt-2 rounded-3xl border border-border/60 bg-background/95 p-3 shadow-lg backdrop-blur-md'
+                  : 'border-t bg-background/95 pb-4 pt-2 backdrop-blur-sm'
+              }`}
+            >
+              <div className={`flex flex-col gap-2 ${scrolled ? '' : 'mx-auto max-w-6xl px-6'}`}>
                 <Link href="#features" onClick={() => setMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-start">Features</Button>
+                </Link>
+                <Link href="#testimonials" onClick={() => setMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-start">Testimonials</Button>
                 </Link>
                 <Link href="/public/login" onClick={() => setMenuOpen(false)}>
                   <Button variant="outline" className="w-full">Login</Button>
@@ -172,11 +191,31 @@ export default function Home() {
         {/* Hero Section */}
         <section className="relative box-border overflow-hidden pt-14 lg:flex lg:min-h-svh lg:items-center">
           <LightRaysBackground />
-          <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-16 lg:py-20 xl:py-24">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/70 via-background/40 to-transparent lg:hidden"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-56"
+            style={{
+              backgroundImage:
+                'linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.82) 56%, rgba(255, 255, 255, 1) 100%)',
+            }}
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-[11] h-56"
+            style={{
+              backgroundImage:
+                'linear-gradient(to bottom, transparent 0%, #d4d4d45e 68%, #d4d4d45e 100%)',
+            }}
+          />
+          <div className="relative z-20 mx-auto w-full max-w-6xl px-6 py-16 lg:py-20 xl:py-24">
             <div className="lg:flex lg:items-center lg:gap-16">
               <div className="mx-auto max-w-xl text-center lg:mx-0 lg:w-1/2 lg:text-left">
                 <FadeIn delay={100} duration={700}>
-                  <div className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border px-3 py-1 lg:mx-0">
+                  <div className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border border-black/30 px-3 py-1 lg:mx-0">
                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">New</span>
                     <span className="text-sm text-muted-foreground">Self-service agent onboarding</span>
                   </div>
@@ -203,7 +242,7 @@ export default function Home() {
                         placeholder="Enter your email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-10"
+                        className="h-10 border-black/30"
                       />
                       <Button type="submit" className="shrink-0">
                         Get Started
@@ -274,8 +313,12 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="border-t bg-muted/20 py-20">
-          <div className="mx-auto max-w-6xl px-6">
+        <section id="features" className="relative overflow-hidden bg-background py-20">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[#d4d4d45e]"
+          />
+          <div className="relative mx-auto max-w-6xl px-6">
             <FadeIn>
               <div className="mx-auto max-w-2xl text-center">
                 <h2 className="text-3xl font-bold tracking-tight">
@@ -294,7 +337,7 @@ export default function Home() {
               className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
             >
               {features.map((feature) => (
-                <Card key={feature.title} className="border-dashed group hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+                <Card key={feature.title} className="border-dashed bg-white/85 group hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
                   <CardContent className="pt-6">
                     <div className="mb-4 rounded-lg bg-primary/10 p-2.5 w-fit group-hover:bg-primary/15 transition-colors duration-300">
                       <feature.icon className="size-5 text-primary" />
@@ -341,7 +384,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-8">
+      <footer className="py-8">
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-2">

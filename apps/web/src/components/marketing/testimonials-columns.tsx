@@ -118,14 +118,19 @@ export function TestimonialsColumn({
   testimonials,
   duration,
   reverse = false,
+  viewportHeight,
 }: {
   className?: string;
   testimonials: Testimonial[];
   duration: number;
   reverse?: boolean;
+  viewportHeight?: string;
 }) {
   return (
-    <div className={cn(styles.viewport, className)}>
+    <div
+      className={cn(styles.viewport, className)}
+      style={viewportHeight ? { height: viewportHeight } : undefined}
+    >
       <div
         className={cn(styles.track, reverse && styles.reverse, 'bg-background')}
         style={{ ['--duration' as string]: `${duration}s` }}
@@ -157,8 +162,8 @@ export function TestimonialsColumns() {
   ];
 
   return (
-    <section id="testimonials" className="relative overflow-hidden border-t py-20">
-      <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-primary/[0.04] to-transparent" />
+    <section id="testimonials" className="relative overflow-hidden bg-background py-20">
+      <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#d4d4d45e] to-transparent" />
       <div className="absolute left-1/2 top-24 h-56 w-56 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-6xl px-6">
@@ -174,10 +179,13 @@ export function TestimonialsColumns() {
           </div>
         </FadeIn>
 
-        <div className="mt-12 grid gap-4 md:grid-cols-2 lg:hidden">
-          {testimonials.slice(0, 4).map((testimonial) => (
-            <TestimonialCard key={testimonial.name} testimonial={testimonial} />
-          ))}
+        <div className="mt-12 lg:hidden">
+          <TestimonialsColumn
+            className="mx-auto max-w-sm"
+            testimonials={testimonials}
+            duration={18}
+            viewportHeight="26rem"
+          />
         </div>
 
         <div className="mt-14 hidden gap-6 lg:grid lg:grid-cols-3">
