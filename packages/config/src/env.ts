@@ -39,8 +39,11 @@ export const apiEnvSchema = z.object({
   SMTP_FROM: optionalEnvString,
   SMTP_SECURE: optionalEnvBoolean,
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),
+  FRONTEND_URLS: optionalEnvString,
   API_PORT: z.coerce.number().int().positive().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).default('lax'),
+  COOKIE_DOMAIN: optionalEnvString,
 }).superRefine((env, ctx) => {
   const smtpFields = ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASS'] as const;
   const hasAnySmtpField = smtpFields.some((field) => Boolean(env[field]));

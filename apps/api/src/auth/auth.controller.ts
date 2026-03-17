@@ -8,7 +8,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { CookieOptions, Response } from 'express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -33,6 +33,27 @@ import { SignupDto } from './dto/signup.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  private getCookieBaseOptions(): CookieOptions {
+    const sameSite =
+      (process.env.COOKIE_SAME_SITE as CookieOptions['sameSite'] | undefined) || 'lax';
+    const domain = process.env.COOKIE_DOMAIN?.trim() || undefined;
+
+    return {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite,
+      path: '/',
+      ...(domain ? { domain } : {}),
+    };
+  }
+
+  private getCookieOptions(maxAge: number): CookieOptions {
+    return {
+      ...this.getCookieBaseOptions(),
+      maxAge,
+    };
+  }
+
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -51,21 +72,17 @@ export class AuthController {
     const result = await this.authService.login(user);
 
     // Set httpOnly cookies
-    response.cookie('access_token', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000, // 15 minutes
-      path: '/',
-    });
+    response.cookie(
+      'access_token',
+      result.accessToken,
+      this.getCookieOptions(15 * 60 * 1000),
+    );
 
-    response.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/',
-    });
+    response.cookie(
+      'refresh_token',
+      result.refreshToken,
+      this.getCookieOptions(7 * 24 * 60 * 60 * 1000),
+    );
 
     return result;
   }
@@ -84,21 +101,17 @@ export class AuthController {
   ) {
     const result = await this.authService.refreshTokens(refreshTokenDto.refreshToken);
 
-    response.cookie('access_token', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000,
-      path: '/',
-    });
+    response.cookie(
+      'access_token',
+      result.accessToken,
+      this.getCookieOptions(15 * 60 * 1000),
+    );
 
-    response.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/',
-    });
+    response.cookie(
+      'refresh_token',
+      result.refreshToken,
+      this.getCookieOptions(7 * 24 * 60 * 60 * 1000),
+    );
 
     return result;
   }
@@ -116,8 +129,8 @@ export class AuthController {
   ) {
     await this.authService.logout(user.id);
 
-    response.clearCookie('access_token', { path: '/' });
-    response.clearCookie('refresh_token', { path: '/' });
+    response.clearCookie('access_token', this.getCookieBaseOptions());
+    response.clearCookie('refresh_token', this.getCookieBaseOptions());
 
     return { message: 'Logged out successfully' };
   }
@@ -137,21 +150,17 @@ export class AuthController {
       signupDto.password,
     );
 
-    response.cookie('access_token', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000,
-      path: '/',
-    });
+    response.cookie(
+      'access_token',
+      result.accessToken,
+      this.getCookieOptions(15 * 60 * 1000),
+    );
 
-    response.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/',
-    });
+    response.cookie(
+      'refresh_token',
+      result.refreshToken,
+      this.getCookieOptions(7 * 24 * 60 * 60 * 1000),
+    );
 
     return result;
   }
