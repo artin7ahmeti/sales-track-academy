@@ -193,7 +193,7 @@ export function LessonFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md [&>*]:min-w-0">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Lesson' : 'Add Lesson'}</DialogTitle>
           <DialogDescription>
@@ -202,7 +202,7 @@ export function LessonFormDialog({
               : 'Add a new lesson to this course.'}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="lesson-title">Title</Label>
             <Input
@@ -291,9 +291,9 @@ export function LessonFormDialog({
 
               {/* Show existing S3 file */}
               {existingS3Key && !file && (
-                <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                <div className="flex w-full min-w-0 max-w-full items-center gap-2 overflow-hidden rounded-md border bg-muted/50 px-3 py-2 text-sm">
                   <FileIcon className="size-4 text-muted-foreground shrink-0" />
-                  <span className="truncate flex-1 text-muted-foreground">
+                  <span className="min-w-0 flex-1 truncate text-muted-foreground">
                     Current file uploaded
                   </span>
                   <Button
@@ -310,9 +310,9 @@ export function LessonFormDialog({
               {/* Show selected file */}
               {file && (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                  <div className="flex w-full min-w-0 max-w-full items-center gap-2 overflow-hidden rounded-md border bg-muted/50 px-3 py-2 text-sm">
                     <FileIcon className="size-4 text-muted-foreground shrink-0" />
-                    <span className="truncate flex-1">{file.name}</span>
+                    <span className="min-w-0 flex-1 truncate">{file.name}</span>
                     <span className="text-xs text-muted-foreground shrink-0">
                       {(file.size / (1024 * 1024)).toFixed(1)} MB
                     </span>
